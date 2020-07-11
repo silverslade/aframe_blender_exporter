@@ -53,7 +53,7 @@ bl_info = {
     "author" : "Alessandro Schillaci",
     "description" : "Blender Exporter to AFrame WebVR application",
     "blender" : (2, 80, 0),
-    "version" : (0, 0, 1),
+    "version" : (0, 0, 2),
     "location" : "View3D",
     "warning" : "",
     "category" : "3D View"
@@ -266,7 +266,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                                     reflections = ' geometry="" cube-env-map="path: '+scene.s_cubemap_path+'; extension: '+scene.s_cubemap_ext+'; reflectivity: 0.99;"'
                     filename = scene.export_path+scene.s_project_name+PATH_ASSETS + obj.name + '.gltf'
                     bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True)
-                    assets.append('\n\t\t\t\t<a-asset-item id="'+obj.name+'" src="/assets/'+obj.name + '.gltf'+'"></a-asset-item>')
+                    assets.append('\n\t\t\t\t<a-asset-item id="'+obj.name+'" src="./assets/'+obj.name + '.gltf'+'"></a-asset-item>')
                     if scene.b_cast_shadows:
                         entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" gltf-model="#'+obj.name+'" scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: true"'+reflections+'></a-entity>')
                     else:
