@@ -2,7 +2,9 @@
 
 This Blender Addon will let you to model your scene in Blender and export to A-Frame VR project with a single click. This is an Open Source Project under the MIT terms, therefore feel free to drop me a line or ask for a Pull Request.
 
-![A-Frame Exporter for Blender](https://github.com/silverslade/aframe_blender_exporter/images/aframe_exporter.png)
+<p align="center">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/aframe_exporter.png">
+</p>
 
 ## Features
 
@@ -41,6 +43,10 @@ This Addon manages the following settings (all of them switchable inside the UI)
 + Enable the addon
 
 ## How to use the Addon
+
+<p align="center">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/main.png">
+</p>
 
 + Open a new/existing blender scene.
 + Open the View3D window (`n` key) to show the export window.
