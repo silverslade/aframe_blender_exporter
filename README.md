@@ -1,6 +1,8 @@
 # Blender Exporter to A-Frame VR
 
-This Blender Addon will let you to model your scene in Blender and export to A-Frame VR project with a single click. This is an Open Source Project under the MIT terms, therefore feel free to drop me a line or ask for a Pull Request.
+
+This Blender add-on will allow you to model your scene in Blender and export to an A-Frame VR project with a single click. This is an open source project under MIT terms, so feel free to email me or ask for a pull request.
+
 
 <p align="center">
   <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/aframe_exporter.png">
@@ -36,7 +38,7 @@ This Addon manages the following settings (all of them switchable inside the UI)
 
 ## Installation
 
-+ Download the latest release version from [Itch.io](https://silverslade.itch.io/out-rock)
++ Download the latest release version from [Itch.io](https://silverslade.itch.io/a-frame-blender-exporter)
 + Open Blender (2.80+)
 + Edit -> Preferences -> Add-ons -> Install
 + Browse and choose the addon zip file
@@ -57,7 +59,7 @@ This Addon manages the following settings (all of them switchable inside the UI)
     + run `live-server` (install it with `npm install -g live-server`) or
     + run `python -m SimpleHTTPServer`
 
-For better instructions, see the official [project page](https://silverslade.itch.io/out-rock).
+For better instructions, see the official [project page](https://silverslade.itch.io/a-frame-blender-exporter).
 
 ### Main UI configuration
 

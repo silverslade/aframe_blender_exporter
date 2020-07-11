@@ -441,7 +441,7 @@ def register():
         
 def unregister():
     bpy.utils.unregister_class(AframeExportPanel_PT_Panel)
-    bpy.utils.runegister_class(AframeExport_OT_Operator)
+    bpy.utils.unregister_class(AframeExport_OT_Operator)
     del bpy.types.Scene.s_aframe_version
     del bpy.types.Scene.b_stats
     del bpy.types.Scene.b_vr_controllers
