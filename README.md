@@ -45,8 +45,9 @@ This Addon manages the following settings (all of them switchable inside the UI)
 ## How to use the Addon
 
 <p align="center">
-  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/main.png">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/main-window.png">
 </p>
+
 
 + Open a new/existing blender scene.
 + Open the View3D window (`n` key) to show the export window.
