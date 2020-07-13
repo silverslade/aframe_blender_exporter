@@ -186,8 +186,6 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    
-    serving = False
 
     def draw(self, content):
         scene = content.scene
