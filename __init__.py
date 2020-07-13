@@ -130,51 +130,51 @@ class Server(threading.Thread):
 t = Template('''
 <!-- Do not edit: generated automatically by AFRAME Exporter -->
 <html>
-    <head>
-        <title>WebVR Application</title>
-        <link rel="icon" type="image/png" href="favicon.ico"/>
-        <meta name="description" content="3D Application">
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script src="https://aframe.io/releases/${aframe_version}/aframe.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.0/dist/aframe-extras.min.js"></script>
-        <script type="text/javascript" src="js/joystick.js"></script>
-        <script type="text/javascript" src="js/camera-cube-env.js"></script>
-        
-        <link rel="stylesheet" type="text/css" href="style.css">
-    </head>
-    <body>
-        <a-scene ${stats} ${joystick}>
-            <!-- Assets -->
-            <a-assets>${asset}
-                <img id="sky" src="./resources/sky.jpg">
-            </a-assets>
+	<head>
+		<title>WebVR Application</title>
+		<link rel="icon" type="image/png" href="favicon.ico"/>
+		<meta name="description" content="3D Application">
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="https://aframe.io/releases/${aframe_version}/aframe.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.0/dist/aframe-extras.min.js"></script>
+		<script type="text/javascript" src="js/joystick.js"></script>
+		<script type="text/javascript" src="js/camera-cube-env.js"></script>
+		
+		<link rel="stylesheet" type="text/css" href="style.css">
+	</head>
+	<body>
+		<a-scene ${stats} ${joystick}>
+			<!-- Assets -->
+			<a-assets>${asset}
+				<img id="sky" src="./resources/sky.jpg">
+			</a-assets>
 
-            <!-- Entities -->
-            ${entity}
+			<!-- Entities -->
+			${entity}
 
-            <!-- Camera -->
-            <a-entity id="player" position="0 -0.2 0" movement-controls="speed: ${player_speed};">
-                <a-entity id="camera" camera position="0 ${player_height} 0" look-controls="pointerLockEnabled: true"
-                    <a-entity id="cursor" cursor="fuse: false;" animation__click="property: scale; startEvents: click; easing: easeInCubic; dur: 50; from: 	0.1 0.1 0.1; to: 1 1 1"
-                        position="0 0 -0.1"
-                        geometry="primitive: circle; radius: 0.001;"
-                        material="color: #CCC; shader: flat;"
-                        ${show_raycast}>
-                    </a-entity>
-                    ${vr_controllers}
-                </a-entity>
-            </a-entity>
+			<!-- Camera -->
+			<a-entity id="player" position="0 -0.2 0" movement-controls="speed: ${player_speed};">
+				<a-entity id="camera" camera position="0 ${player_height} 0" look-controls="pointerLockEnabled: true"
+					<a-entity id="cursor" cursor="fuse: false;" animation__click="property: scale; startEvents: click; easing: easeInCubic; dur: 50; from: 	0.1 0.1 0.1; to: 1 1 1"
+						position="0 0 -0.1"
+						geometry="primitive: circle; radius: 0.001;"
+						material="color: #CCC; shader: flat;"
+						${show_raycast}>
+					</a-entity>
+					${vr_controllers}
+				</a-entity>
+			</a-entity>
 
-            <!-- Lights and Skybox -->
-            <a-entity light="intensity: 1; castShadow: ${cast_shadows}; shadowBias: -0.001; shadowCameraFar: 501.02; shadowCameraBottom: 12; shadowCameraFov: 101.79; shadowCameraNear: 0; shadowCameraTop: -5; shadowCameraRight: 10; shadowCameraLeft: -10; shadowRadius: 2" position="1.36586 7.17965 1"></a-entity>
-            <a-entity light="type: ambient"></a-entity>
+			<!-- Lights and Skybox -->
+			<a-entity light="intensity: 1; castShadow: ${cast_shadows}; shadowBias: -0.001; shadowCameraFar: 501.02; shadowCameraBottom: 12; shadowCameraFov: 101.79; shadowCameraNear: 0; shadowCameraTop: -5; shadowCameraRight: 10; shadowCameraLeft: -10; shadowRadius: 2" position="1.36586 7.17965 1"></a-entity>
+			<a-entity light="type: ambient"></a-entity>
 
             <!-- Sky -->
             ${sky}
-        </a-scene>
-    </body>
+		</a-scene>
+	</body>
 </html>
 <!-- Do not edit: generated automatically by AFRAME Exporter -->
 ''')
