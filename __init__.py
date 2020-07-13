@@ -63,6 +63,12 @@ import os
 import bpy
 import shutil
 from string import Template
+import http.server
+import urllib.request
+import socketserver
+import threading
+
+PORT = 8001
 
 # Constants
 PATH_INDEX = "index.html"
@@ -83,55 +89,92 @@ entities = []
 lights = []
 showstats = ""
 
+# Need to subclass SimpleHTTPRequestHandler so we can serve cache-busting headers
+class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_my_headers()
+        http.server.SimpleHTTPRequestHandler.end_headers(self)
+
+    def send_my_headers(self):
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+
+class Server(threading.Thread):
+    instance = None
+    folder = ""
+    should_stop = False
+        
+    def set_folder(self, folder):
+        self.folder = folder
+        
+    def run(self):
+        Handler = MyHTTPRequestHandler
+        socketserver.TCPServer.allow_reuse_address = True
+        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+            os.chdir(self.folder)
+            while True:
+                if self.should_stop:
+                    httpd.server_close()
+                    break
+                httpd.handle_request()
+
+    def stop(self):
+        self.should_stop = True
+        # Consume the last handle_request call that's still pending
+        with urllib.request.urlopen(f'http://localhost:{PORT}/') as response:
+            html = response.read()
+
+
 # Index html a-frame template
 t = Template('''
 <!-- Do not edit: generated automatically by AFRAME Exporter -->
 <html>
-	<head>
-		<title>WebVR Application</title>
-		<link rel="icon" type="image/png" href="favicon.ico"/>
-		<meta name="description" content="3D Application">
-		<meta charset="utf-8">
-		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name="viewport" content="width=device-width, initial-scale=1">
-		<script src="https://aframe.io/releases/${aframe_version}/aframe.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.0/dist/aframe-extras.min.js"></script>
-		<script type="text/javascript" src="js/joystick.js"></script>
-		<script type="text/javascript" src="js/camera-cube-env.js"></script>
-		
-		<link rel="stylesheet" type="text/css" href="style.css">
-	</head>
-	<body>
-		<a-scene ${stats} ${joystick}>
-			<!-- Assets -->
-			<a-assets>${asset}
-				<img id="sky" src="./resources/sky.jpg">
-			</a-assets>
+    <head>
+        <title>WebVR Application</title>
+        <link rel="icon" type="image/png" href="favicon.ico"/>
+        <meta name="description" content="3D Application">
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <script src="https://aframe.io/releases/${aframe_version}/aframe.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.0/dist/aframe-extras.min.js"></script>
+        <script type="text/javascript" src="js/joystick.js"></script>
+        <script type="text/javascript" src="js/camera-cube-env.js"></script>
+        
+        <link rel="stylesheet" type="text/css" href="style.css">
+    </head>
+    <body>
+        <a-scene ${stats} ${joystick}>
+            <!-- Assets -->
+            <a-assets>${asset}
+                <img id="sky" src="./resources/sky.jpg">
+            </a-assets>
 
-			<!-- Entities -->
-			${entity}
+            <!-- Entities -->
+            ${entity}
 
-			<!-- Camera -->
-			<a-entity id="player" position="0 -0.2 0" movement-controls="speed: ${player_speed};">
-				<a-entity id="camera" camera position="0 ${player_height} 0" look-controls="pointerLockEnabled: true"
-					<a-entity id="cursor" cursor="fuse: false;" animation__click="property: scale; startEvents: click; easing: easeInCubic; dur: 50; from: 	0.1 0.1 0.1; to: 1 1 1"
-						position="0 0 -0.1"
-						geometry="primitive: circle; radius: 0.001;"
-						material="color: #CCC; shader: flat;"
-						${show_raycast}>
-					</a-entity>
-					${vr_controllers}
-				</a-entity>
-			</a-entity>
+            <!-- Camera -->
+            <a-entity id="player" position="0 -0.2 0" movement-controls="speed: ${player_speed};">
+                <a-entity id="camera" camera position="0 ${player_height} 0" look-controls="pointerLockEnabled: true"
+                    <a-entity id="cursor" cursor="fuse: false;" animation__click="property: scale; startEvents: click; easing: easeInCubic; dur: 50; from: 	0.1 0.1 0.1; to: 1 1 1"
+                        position="0 0 -0.1"
+                        geometry="primitive: circle; radius: 0.001;"
+                        material="color: #CCC; shader: flat;"
+                        ${show_raycast}>
+                    </a-entity>
+                    ${vr_controllers}
+                </a-entity>
+            </a-entity>
 
-			<!-- Lights and Skybox -->
-			<a-entity light="intensity: 1; castShadow: ${cast_shadows}; shadowBias: -0.001; shadowCameraFar: 501.02; shadowCameraBottom: 12; shadowCameraFov: 101.79; shadowCameraNear: 0; shadowCameraTop: -5; shadowCameraRight: 10; shadowCameraLeft: -10; shadowRadius: 2" position="1.36586 7.17965 1"></a-entity>
-			<a-entity light="type: ambient"></a-entity>
+            <!-- Lights and Skybox -->
+            <a-entity light="intensity: 1; castShadow: ${cast_shadows}; shadowBias: -0.001; shadowCameraFar: 501.02; shadowCameraBottom: 12; shadowCameraFov: 101.79; shadowCameraNear: 0; shadowCameraTop: -5; shadowCameraRight: 10; shadowCameraLeft: -10; shadowRadius: 2" position="1.36586 7.17965 1"></a-entity>
+            <a-entity light="type: ambient"></a-entity>
 
             <!-- Sky -->
             ${sky}
-		</a-scene>
-	</body>
+        </a-scene>
+    </body>
 </html>
 <!-- Do not edit: generated automatically by AFRAME Exporter -->
 ''')
@@ -143,6 +186,8 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
+    
+    serving = False
 
     def draw(self, content):
         scene = content.scene
@@ -183,7 +228,28 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
         col.separator()
         #col.label(text="Export to a-frame project", icon='NONE')
         col.operator('aframe.export', text='Export A-Frame Project')
+        serve_label = "Stop Serving" if Server.instance else "Start Serving"
+        col.operator('aframe.serve', text=serve_label)
+        if Server.instance:
+            col.operator("wm.url_open", text="Open Preview").url = f'http://localhost:{PORT}'
         col.label(text=scene.s_output, icon='INFO')
+        
+class AframeServe_OT_Operator(bpy.types.Operator):
+    bl_idname = "aframe.serve"
+    bl_label = "Serve Aframe Preview"
+    bl_description = "Serve AFrame"
+    
+    def execute(self, content):
+        if (Server.instance):
+            Server.instance.stop()
+            Server.instance = None
+            return {'FINISHED'}
+        scene = content.scene
+        Server.instance = Server()
+        Server.instance.set_folder(os.path.join ( scene.export_path, scene.s_project_name ))
+        Server.instance.start()
+        
+        return {'FINISHED'}
 
 class AframeExport_OT_Operator(bpy.types.Operator):
     bl_idname = "aframe.export"
@@ -403,7 +469,8 @@ def register():
 
     bpy.utils.register_class(AframeExportPanel_PT_Panel)
     bpy.utils.register_class(AframeExport_OT_Operator)
-
+    bpy.utils.register_class(AframeServe_OT_Operator)
+    
     for p in _props:
         if p [ 0 ] == 'str': _reg_str ( scn, * p [ 1 : ] )
         if p [ 0 ] == 'bool': _reg_bool ( scn, * p [ 1 : ] )
@@ -412,6 +479,7 @@ def register():
 def unregister():
     bpy.utils.unregister_class(AframeExportPanel_PT_Panel)
     bpy.utils.unregister_class(AframeExport_OT_Operator)
+    bpy.utils.unregister_class(AframeServe_OT_Operator)
 
     for p in _props:
         del bpy.types.Scene [ p [ 1 ] ]
