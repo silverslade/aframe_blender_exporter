@@ -21,7 +21,7 @@ freely, subject to the following restrictions:
 
 '''
 In collaboration with Andrea Rotondo, VR Expert since 1998
-informations and contacs: 
+informations and contacs:
 http://virtual-art.it - rotondo.andrea@gmail.com
 https://www.facebook.com/wox76
 https://www.facebook.com/groups/134106979989778/
@@ -36,8 +36,8 @@ USAGE:
     - click on "Export A-Frame Project" button
     - your project will be saved in the export directory
     - launch "live-server" (install it with "npm install -g live-server") or "python -m SimpleHTTPServer"
-    
-CUSTOM_PROPERTIES: 
+
+CUSTOM_PROPERTIES:
     AFRAME_CUBEMAP -> if present, set reflections on to the mesh object (metal -> 1, rough -> 0)
 
 THIRD PARTY SOFTWARE:
@@ -53,7 +53,7 @@ bl_info = {
     "author" : "Alessandro Schillaci",
     "description" : "Blender Exporter to AFrame WebVR application",
     "blender" : (2, 80, 0),
-    "version" : (0, 0, 2),
+    "version" : (0, 0, 3),
     "location" : "View3D",
     "warning" : "",
     "category" : "3D View"
@@ -65,18 +65,18 @@ import shutil
 from string import Template
 
 # Constants
-PATH_INDEX = "/index.html"
-PATH_ASSETS = "/assets/"
-PATH_RESOURCES = "/resources/"
-PATH_ENVIRONMENT = "/env/"
-PATH_JAVASCRIPT = "/js/"
+PATH_INDEX = "index.html"
+PATH_ASSETS = "assets/"
+PATH_RESOURCES = "resources/"
+PATH_ENVIRONMENT = "env/"
+PATH_JAVASCRIPT = "js/"
 AFRAME_ENABLED = "AFRAME_ENABLED"
 AFRAME_HTTP_LINK = "AFRAME_HTTP_LINK"
 AFRAME_ANIM_ROTATE = "AFRAME_ANIM_ROTATE"
-AFRAME_DOWNLOAD = "AFRAME_DOWNLOAD"   
+AFRAME_DOWNLOAD = "AFRAME_DOWNLOAD"
 AFRAME_VIDEO = "AFRAME_VIDEO"
 AFRAME_VIDEO_AUTOPLAY = "AFRAME_VIDEO_AUTOPLAY"
-AFRAME_VIDEO_STREAM = "AFRAME_VIDEO_STREAM"   
+AFRAME_VIDEO_STREAM = "AFRAME_VIDEO_STREAM"
 
 assets = []
 entities = []
@@ -84,63 +84,62 @@ lights = []
 showstats = ""
 
 # Index html a-frame template
-t = Template('\
-<!-- Do not edit: generated automatically by AFRAME Exporter -->\n\
-<html>\n\
-\t<head>\n\
-\t\t<title>WebVR Application</title>\n\
-\t\t<link rel="icon" type="image/png" href="favicon.ico"/>\n\
-\t\t<meta name="description" content="3D Application">\n\
-\t\t<meta charset="utf-8">\n\
-\t\t<meta http-equiv="X-UA-Compatible" content="IE=edge">\n\
-\t\t<meta name="viewport" content="width=device-width, initial-scale=1">\n\
-\t\t<script src="https://aframe.io/releases/${aframe_version}/aframe.min.js"></script>\n\
-\t\t<script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.0/dist/aframe-extras.min.js"></script>\n\
-\t\t<script type="text/javascript" src="js/joystick.js"></script>\n\
-\t\t<script type="text/javascript" src="js/camera-cube-env.js"></script>\n\
-\t\t\n\
-\t\t<link rel="stylesheet" type="text/css" href="style.css">\n\
-\t</head>\n\
-\t<body>\n\
-\t\t<a-scene ${stats} ${joystick}>\n\
-\t\t\t<!-- Assets -->\n\
-\t\t\t<a-assets>${asset}\n\
-\t\t\t\t<img id="sky" src="./resources/sky.jpg">\n\
-\t\t\t</a-assets>\n\
-\n\
-\t\t\t<!-- Entities -->\
-\t\t\t${entity}\n\
-\n\
-\t\t\t<!-- Camera -->\n\
-\n\
-\t\t\t<a-entity id="player" position="0 -0.2 0" movement-controls="speed: ${player_speed};">\n\
-\t\t\t\t<a-entity id="camera" camera position="0 ${player_height} 0" look-controls="pointerLockEnabled: true"\n\
-\t\t\t\t\t<a-entity id="cursor" cursor="fuse: false;" animation__click="property: scale; startEvents: click; easing: easeInCubic; dur: 50; from: 	0.1 0.1 0.1; to: 1 1 1"\n\
-\t\t\t\t\t\tposition="0 0 -0.1"\n\
-\t\t\t\t\t\tgeometry="primitive: circle; radius: 0.001;"\n\
-\t\t\t\t\t\tmaterial="color: #CCC; shader: flat;"\n\
-\t\t\t\t\t\t${show_raycast}>\n\
-\t\t\t\t\t</a-entity>\n\
-\t\t\t\t\t${vr_controllers}\n\
-\t\t\t\t</a-entity>\n\
-\t\t\t</a-entity>\n\
-\n\
-\t\t\t<!-- Lights and Skybox -->\
-\n\
-\t\t\t<a-entity light="intensity: 1; castShadow: ${cast_shadows}; shadowBias: -0.001; shadowCameraFar: 501.02; shadowCameraBottom: 12; shadowCameraFov: 101.79; shadowCameraNear: 0; shadowCameraTop: -5; shadowCameraRight: 10; shadowCameraLeft: -10; shadowRadius: 2" position="1.36586 7.17965 1"></a-entity>\n\
-\t\t\t<a-entity light="type: ambient"></a-entity>\n\
-\n\
-\t\t\t<!-- <a-sky color="#ECECEC"></a-sky> -->\n\
-\t\t\t<a-sky src="#sky" material="" geometry="" rotation="0 90 0"></a-sky>\n\
-\t\t</a-scene>\n\
-\t</body>\n\
-</html>\n\
-<!-- Do not edit: generated automatically by AFRAME Exporter -->')
+t = Template('''
+<!-- Do not edit: generated automatically by AFRAME Exporter -->
+<html>
+	<head>
+		<title>WebVR Application</title>
+		<link rel="icon" type="image/png" href="favicon.ico"/>
+		<meta name="description" content="3D Application">
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script src="https://aframe.io/releases/${aframe_version}/aframe.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.0/dist/aframe-extras.min.js"></script>
+		<script type="text/javascript" src="js/joystick.js"></script>
+		<script type="text/javascript" src="js/camera-cube-env.js"></script>
+		
+		<link rel="stylesheet" type="text/css" href="style.css">
+	</head>
+	<body>
+		<a-scene ${stats} ${joystick}>
+			<!-- Assets -->
+			<a-assets>${asset}
+				<img id="sky" src="./resources/sky.jpg">
+			</a-assets>
+
+			<!-- Entities -->
+			${entity}
+
+			<!-- Camera -->
+			<a-entity id="player" position="0 -0.2 0" movement-controls="speed: ${player_speed};">
+				<a-entity id="camera" camera position="0 ${player_height} 0" look-controls="pointerLockEnabled: true"
+					<a-entity id="cursor" cursor="fuse: false;" animation__click="property: scale; startEvents: click; easing: easeInCubic; dur: 50; from: 	0.1 0.1 0.1; to: 1 1 1"
+						position="0 0 -0.1"
+						geometry="primitive: circle; radius: 0.001;"
+						material="color: #CCC; shader: flat;"
+						${show_raycast}>
+					</a-entity>
+					${vr_controllers}
+				</a-entity>
+			</a-entity>
+
+			<!-- Lights and Skybox -->
+			<a-entity light="intensity: 1; castShadow: ${cast_shadows}; shadowBias: -0.001; shadowCameraFar: 501.02; shadowCameraBottom: 12; shadowCameraFov: 101.79; shadowCameraNear: 0; shadowCameraTop: -5; shadowCameraRight: 10; shadowCameraLeft: -10; shadowRadius: 2" position="1.36586 7.17965 1"></a-entity>
+			<a-entity light="type: ambient"></a-entity>
+
+            <!-- Sky -->
+            ${sky}
+		</a-scene>
+	</body>
+</html>
+<!-- Do not edit: generated automatically by AFRAME Exporter -->
+''')
 
 
 class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_idname = "AFRAME_EXPORT_PT_Panel"
-    bl_label = "Aframe Exporter"
+    bl_label = "Aframe Exporter (v 0.0.3)"
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -155,30 +154,31 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
         col.prop(scene, "b_stats")
         col.prop(scene, "b_joystick")
         col.prop(scene, "b_vr_controllers")
-        #col.prop(scene, "b_hands")        
+        #col.prop(scene, "b_hands")
 
         #col.separator()
         col.prop(scene, "b_cubemap")
         if scene.b_cubemap:
             box = col.box()
             box.prop(scene, "b_camera_cube")
+            box.prop(scene, "b_show_env_sky")                  
             box.prop(scene, "b_cubemap_background")
-            box.prop(scene, "s_cubemap_path", text="test")            
-            box.prop(scene, "s_cubemap_ext")                        
-        #col.prop(scene, "b_blender_lights")    
+            box.prop(scene, "s_cubemap_path", text="test")
+            box.prop(scene, "s_cubemap_ext")      
+        #col.prop(scene, "b_blender_lights")
         col.prop(scene, "b_cast_shadows")
         col.prop(scene, "b_raycast")
         if scene.b_raycast:
             box = col.box()
-            box.prop(scene, "f_raycast_length")     
-            box.prop(scene, "f_raycast_interval")                
+            box.prop(scene, "f_raycast_length")
+            box.prop(scene, "f_raycast_interval")
         #col.prop(scene, "b_lightmaps")
-        col.separator()        
-        col.prop(scene, "f_player_height")          
-        col.prop(scene, "f_player_speed")  
+        col.separator()
+        col.prop(scene, "f_player_height")
+        col.prop(scene, "f_player_speed")
         col.separator()
         col.prop(scene, "s_project_name")
-        col.prop(scene, "export_path")  
+        col.prop(scene, "export_path")
         col.prop(scene, "b_delete_assets_dir")
         col.separator()
         #col.label(text="Export to a-frame project", icon='NONE')
@@ -200,42 +200,50 @@ class AframeExport_OT_Operator(bpy.types.Operator):
         script_file = os.path.realpath(__file__)
         #print("script_file dir = "+script_file)
         directory = os.path.dirname(script_file)
-                
+
+        # Destination base path
+        DEST_RES = os.path.join ( scene.export_path, scene.s_project_name )
+
+
         if __name__ == "__main__":
-            #print("inside blend file")  
+            #print("inside blend file")
             #print(os.path.dirname(directory))
-            directory = os.path.dirname(directory)  
-        
+            directory = os.path.dirname(directory)
+
         print("Target Dir = "+directory)
-                
-        # Clear existing "assests" dir if required   
-        if scene.b_delete_assets_dir:           
-            if os.path.exists(scene.export_path+scene.s_project_name+PATH_ASSETS):
-                shutil.rmtree(scene.export_path+scene.s_project_name+PATH_ASSETS)
-                    
-        # Create output path
-        os.makedirs(scene.export_path+scene.s_project_name, exist_ok=True)
-        os.makedirs(scene.export_path+scene.s_project_name+PATH_ASSETS, exist_ok=True)
-        os.makedirs(scene.export_path+scene.s_project_name+PATH_RESOURCES, exist_ok=True)
-        os.makedirs(scene.export_path+scene.s_project_name+PATH_ENVIRONMENT, exist_ok=True)                
-        os.makedirs(scene.export_path+scene.s_project_name+PATH_JAVASCRIPT, exist_ok=True)
-        
+
+        # Clear existing "assests" dir if required
+        if scene.b_delete_assets_dir:
+            assets_dir = os.path.join ( DEST_RES, PATH_ASSETS )
+            if os.path.exists( assets_dir ):
+                shutil.rmtree( assets_dir )
+
+
+        ALL_PATHS = [ ".", PATH_ASSETS, PATH_RESOURCES, PATH_ENVIRONMENT, PATH_JAVASCRIPT ]
+        for p in ALL_PATHS:
+            dp = os.path.join ( DEST_RES, p )
+            print ( "--- DEST [%s] [%s] {%s}" % ( DEST_RES, dp, p ) )
+            os.makedirs ( dp, exist_ok=True )
+
         #check if addon or script for correct path
-        shutil.copyfile(directory+PATH_RESOURCES+"sky.jpg", scene.export_path+scene.s_project_name+PATH_RESOURCES+"sky.jpg")
-        shutil.copyfile(directory+PATH_RESOURCES+"controller.png", scene.export_path+scene.s_project_name+PATH_RESOURCES+"controller.png")        
-        shutil.copyfile(directory+PATH_RESOURCES+"favicon.ico", scene.export_path+scene.s_project_name+"/favicon.ico")    
-        shutil.copyfile(directory+PATH_RESOURCES+"style.css", scene.export_path+scene.s_project_name+"/style.css")
-        shutil.copyfile(directory+PATH_RESOURCES+"joystick.js", scene.export_path+scene.s_project_name+PATH_JAVASCRIPT+"/joystick.js")
-        shutil.copyfile(directory+PATH_RESOURCES+"camera-cube-env.js", scene.export_path+scene.s_project_name+PATH_JAVASCRIPT+"/camera-cube-env.js")       
-        shutil.copyfile(directory+PATH_RESOURCES+"joystick.js", scene.export_path+scene.s_project_name+PATH_JAVASCRIPT+"/joystick.js")
-        shutil.copyfile(directory+PATH_RESOURCES+"negx.jpg", scene.export_path+scene.s_project_name+PATH_ENVIRONMENT+"/negx.jpg")
-        shutil.copyfile(directory+PATH_RESOURCES+"negy.jpg", scene.export_path+scene.s_project_name+PATH_ENVIRONMENT+"/negy.jpg")
-        shutil.copyfile(directory+PATH_RESOURCES+"negz.jpg", scene.export_path+scene.s_project_name+PATH_ENVIRONMENT+"/negz.jpg")
-        shutil.copyfile(directory+PATH_RESOURCES+"posx.jpg", scene.export_path+scene.s_project_name+PATH_ENVIRONMENT+"/posx.jpg")        
-        shutil.copyfile(directory+PATH_RESOURCES+"posy.jpg", scene.export_path+scene.s_project_name+PATH_ENVIRONMENT+"/posy.jpg")        
-        shutil.copyfile(directory+PATH_RESOURCES+"posz.jpg", scene.export_path+scene.s_project_name+PATH_ENVIRONMENT+"/posz.jpg")        
-        
-        
+        _resources = [
+            [ ".", "favicon.ico" ],
+            [ ".", "style.css" ],
+            [ PATH_RESOURCES, "sky.jpg" ],
+            [ PATH_JAVASCRIPT, "joystick.js" ],
+            [ PATH_JAVASCRIPT, "camera-cube-env.js" ],
+            [ PATH_ENVIRONMENT, "negx.jpg" ],
+            [ PATH_ENVIRONMENT, "negy.jpg" ],
+            [ PATH_ENVIRONMENT, "negz.jpg" ],
+            [ PATH_ENVIRONMENT, "posx.jpg" ],
+            [ PATH_ENVIRONMENT, "posy.jpg" ],
+            [ PATH_ENVIRONMENT, "posz.jpg" ],
+        ]
+
+        SRC_RES = os.path.join ( directory, PATH_RESOURCES )
+        for dest_path, fname in _resources:
+            shutil.copyfile ( os.path.join ( SRC_RES, fname ), os.path.join ( DEST_RES, dest_path, fname ) )
+
         # Loop 3D entities
         exclusion_obj_types = ['CAMERA','LAMP','ARMATURE']
         exported_obj = 0
@@ -248,7 +256,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                 obj.select_set(state=True)
                 bpy.context.view_layer.objects.active = obj
                 #bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
-                bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY') 
+                bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
                 location = obj.location.copy()
                 bpy.ops.object.location_clear()
                 actualposition = str(location.x)+" "+str(location.z)+" "+str(-location.y)
@@ -264,7 +272,9 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                                     reflections = ' geometry="" camera-cube-env="distance: 500; resolution: 512; repeat: true; interval: 400"'
                                 else:
                                     reflections = ' geometry="" cube-env-map="path: '+scene.s_cubemap_path+'; extension: '+scene.s_cubemap_ext+'; reflectivity: 0.99;"'
-                    filename = scene.export_path+scene.s_project_name+PATH_ASSETS + obj.name + '.gltf'
+
+                    filename = os.path.join ( DEST_RES, PATH_ASSETS, obj.name ) # + '.glft' )
+                    #filename = scene.export_path+scene.s_project_name+PATH_ASSETS + obj.name + '.gltf'
                     bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True)
                     assets.append('\n\t\t\t\t<a-asset-item id="'+obj.name+'" src="./assets/'+obj.name + '.gltf'+'"></a-asset-item>')
                     if scene.b_cast_shadows:
@@ -275,8 +285,6 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                 obj.location = location
                 obj.select_set(state=False)
                 exported_obj+=1
-                
-
 
         bpy.ops.object.select_all(action='DESELECT')
 
@@ -284,41 +292,47 @@ class AframeExport_OT_Operator(bpy.types.Operator):
         #print(assets)
         all_assets = ""
         for x in assets:
-            all_assets = all_assets+x
+            all_assets += x
 
         all_entities = ""
         for y in entities:
-            all_entities = all_entities+y
+            all_entities += y
 
         # scene
         if scene.b_stats:
             showstats = "stats"
         else:
             showstats = ""
-        
-        # joystick    
+
+        # joystick
         if scene.b_joystick:
             showjoystick = "joystick"
         else:
-            showjoystick = ""    
-        
+            showjoystick = ""
+
         if scene.b_raycast:
             raycaster='raycaster = "far: '+str(scene.f_raycast_length)+'; interval: '+str(scene.f_raycast_interval)+'; objects: .clickable,.links"'
         else:
             raycaster=""
-        
+
         #vr_controllers
         if scene.b_vr_controllers:
-            showvr_controllers = '\t\t\t<a-entity id="leftHand" oculus-touch-controls="hand: left" vive-controls="hand: left"></a-entity>\n\t\t\t<a-entity id="rightHand" laser-controls oculus-touch-controls="hand: right" vive-controls="hand: right" '+raycaster+'></a-entity>'
+            showvr_controllers = '<a-entity id="leftHand" oculus-touch-controls="hand: left" vive-controls="hand: left"></a-entity>\n\t\t\t\t\t<a-entity id="rightHand" laser-controls oculus-touch-controls="hand: right" vive-controls="hand: right" '+raycaster+'></a-entity>'
         else:
-            showvr_controllers = ""    
-            
+            showvr_controllers = ""
+
         #shadows
         if scene.b_cast_shadows:
             showcast_shadows = "true"
         else:
             showcast_shadows = "false"
-            
+
+        # Sky
+        if scene.b_show_env_sky:
+            show_env_sky = '<a-sky src="#sky" material="" geometry="" rotation="0 90 0"></a-sky>'                              
+        else:
+            show_env_sky = '<a-sky color="#ECECEC"></a-sky>'
+
         s = t.substitute(
             asset=all_assets,
             entity=all_entities,
@@ -329,142 +343,78 @@ class AframeExport_OT_Operator(bpy.types.Operator):
             cast_shadows=showcast_shadows,
             player_height=scene.f_player_height,
             player_speed=scene.f_player_speed,
-            show_raycast=raycaster)
-            
-            
+            show_raycast=raycaster,
+            sky=show_env_sky)
+
+
         #print(s)
 
         # Saving the main INDEX FILE
-        with open(scene.export_path+scene.s_project_name+PATH_INDEX, "w") as file:
+        with open( os.path.join ( DEST_RES, PATH_INDEX ), "w") as file:
             file.write(s)
-        
+
         scene.s_output = str(exported_obj)+" meshes exported"
         return {'FINISHED'}
 
 
-# ------------------------------------------- REGISTER / UNREGISTER 
+# ------------------------------------------- REGISTER / UNREGISTER
+_props = [
+    ("str", "s_aframe_version", "A-Frame", "A-Frame version", "1.0.4" ),
+    ("bool", "b_stats", "Show Stats", "Enable rendering stats in game" ),
+    ("bool", "b_vr_controllers", "Enable VR Controllers (HTC,Quest)", "Enable HTC/Quest Controllers in game", True ),
+    ("bool", "b_hands", "Use Hands Models", "Use hands models instead of controllers", True ),
+    ("bool", "b_joystick", "Show Joystick", "Add a joystick on screen" ),
+    ("bool", "b_cubemap", "Cube Env Map", "Enable Cube Map component" ),
+    ("str", "s_cubemap_path", "Path", "Cube Env Path", "/env/" ),
+    ("bool", "b_cubemap_background", "Enable Background", "Enable Cube Map Background" ),
+    ("str", "s_cubemap_ext", "Ext", "Image file extension", "jpg" ),
+    ("bool", "b_blender_lights", "Export Blender Lights", "Export Blenedr Lights or use Aframe default ones" ),
+    ("bool", "b_cast_shadows", "Cast Shadows", "Cast and Receive Shadows" ),
+    ("bool", "b_lightmaps", "Use Lightmaps as Occlusion (GlTF Settings)", "GLTF Models don\'t have lightmaps: turn on this option will save lightmaps to Ambient Occlusion in the GLTF models" ),
+    ("float", "f_player_speed", "Player Speed", "Player Speed", 0.1 ),
+    ("float", "f_raycast_length", "Raycast Length","Raycast lenght to interact with objects", 1.0 ),
+    ("float", "f_raycast_interval", "Raycast Interval","Raycast Interval to interact with objects", 1500.0 ),
+    ("str", "export_path", "Export To","Path to the folder containing the files to import", "/ramdisk/", 'FILE_PATH'),
+    ("str", "s_project_name", "Name", "Project's name","aframe-prj"),
+    ("str", "s_output", "output","output export","output"),
+    ("bool", "b_delete_assets_dir", "Clear Assets Dir before export","Clear the asset dir" ),
+    ("bool", "b_camera_cube", "Camera Cube Env","Enable Camera Cube Env component"),
+    ("float", "f_player_height", "Player Height","Player Height", 1.7),
+    ("bool", "b_raycast", "Enable Raycast","Enable Raycast"),
+    ("bool", "b_show_env_sky", "Show Environment Sky","Show Environment Sky"),
+]
+
+
+def _reg_bool ( scene, prop, name, descr, default = False ):
+    setattr ( scene, prop, bpy.props.BoolProperty ( name = name, description = descr, default = default ) )
+
+def _reg_str ( scene, prop, name, descr, default = "", subtype = "" ):
+    if subtype:
+        setattr ( scene, prop, bpy.props.StringProperty ( name = name, description = descr, default = default, subtype = subtype ) )
+    else:
+        setattr ( scene, prop, bpy.props.StringProperty ( name = name, description = descr, default = default ) )
+
+
+def _reg_float ( scene, prop, name, descr, default = 0.0 ):
+    setattr ( scene, prop, bpy.props.FloatProperty ( name = name, description = descr, default = default ) )
 
 def register():
+    scn = bpy.types.Scene
+
     bpy.utils.register_class(AframeExportPanel_PT_Panel)
     bpy.utils.register_class(AframeExport_OT_Operator)
-    bpy.types.Scene.s_aframe_version = bpy.props.StringProperty(
-        name="A-Frame",
-        description="A-frame version",
-        default = "1.0.4") 
-    bpy.types.Scene.b_stats = bpy.props.BoolProperty(
-        name="Show Stats",
-        description="Enable rendering stats in game",
-        default = False)
-    bpy.types.Scene.b_vr_controllers = bpy.props.BoolProperty(
-        name="Enable VR Controllers (HTC,Quest)",
-        description="Enable HTC/Quest Controllers in game",
-        default = True)    
-    bpy.types.Scene.b_hands = bpy.props.BoolProperty(
-        name="Use Hands Models",
-        description="Use hands models instead of controllers",
-        default = True)               
-    bpy.types.Scene.b_joystick = bpy.props.BoolProperty(
-        name="Show Joystick",
-        description="Add a joystick on screen",
-        default = False)       
-    bpy.types.Scene.b_cubemap = bpy.props.BoolProperty(
-        name="Cube Env Map",
-        description="Enable Cube Map component",
-        default = False)   
-    bpy.types.Scene.s_cubemap_path = bpy.props.StringProperty(
-        name="Path",
-        description="Cube Env Path",
-        default = "/env/")   
-    bpy.types.Scene.b_cubemap_background = bpy.props.BoolProperty(
-        name="Enable Background",
-        description="Enable Cube Map Background",
-        default = False)  
-    bpy.types.Scene.s_cubemap_ext = bpy.props.StringProperty(
-        name="Ext",
-        description="Image File Extension",
-        default = "jpg")
-    bpy.types.Scene.b_blender_lights = bpy.props.BoolProperty(
-        name="Export Blender Lights",
-        description="Export Blenedr Lights or use Aframe default ones",
-        default = False)                                          
-    bpy.types.Scene.b_cast_shadows = bpy.props.BoolProperty(
-        name="Cast Shadows",
-        description="Cast and Receive Shadows",
-        default = False)          
-    bpy.types.Scene.b_lightmaps = bpy.props.BoolProperty(
-        name="Use Lightmaps as Occlusion (GlTF Settings)",
-        description="GLTF Models don\'t have lightmaps: turn on this option will save lightmaps to Ambient Occlusion in the GLTF models",
-        default = False)
-    bpy.types.Scene.f_player_speed = bpy.props.FloatProperty(
-        name="Player Speed",
-        description="Player Speed",
-        default = 0.1)           
-    bpy.types.Scene.f_raycast_length = bpy.props.FloatProperty(
-        name="Raycast Length",
-        description="Raycast lenght to interact with objects",
-        default = 1.0)  
-    bpy.types.Scene.f_raycast_interval = bpy.props.FloatProperty(
-        name="Raycast Interval",
-        description="Raycast Interval to interact with objects",
-        default = 1500.0)
-    bpy.types.Scene.export_path = bpy.props.StringProperty(
-        name = "Export To",
-        description = "Path to the folder containing the files to import",
-        default = "C:/temp/",
-        subtype = 'FILE_PATH')    
-    bpy.types.Scene.s_project_name = bpy.props.StringProperty(
-        name="Name",
-        description="Project's name",
-        default = "aframe-prj")     
-    bpy.types.Scene.s_output = bpy.props.StringProperty(
-        name="output",
-        description="output export",
-        default = "output")     
-    bpy.types.Scene.b_delete_assets_dir = bpy.props.BoolProperty(
-        name="Clear Assets Dir before export",
-        description="Clear the asset dir",
-        default = False)
-    bpy.types.Scene.b_camera_cube = bpy.props.BoolProperty(
-        name="Camera Cube Env",
-        description="Enable Camera Cube Env component",
-        default = False)               
-    bpy.types.Scene.f_player_height = bpy.props.FloatProperty(
-        name="Player Height",
-        description="Player Height",
-        default = 1.7)     
-    bpy.types.Scene.b_raycast = bpy.props.BoolProperty(
-        name="Enable Raycast",
-        description="Enable Raycast",
-        default = False)               
-                                  
 
-        
+    for p in _props:
+        if p [ 0 ] == 'str': _reg_str ( scn, * p [ 1 : ] )
+        if p [ 0 ] == 'bool': _reg_bool ( scn, * p [ 1 : ] )
+        if p [ 0 ] == 'float': _reg_float ( scn, * p [ 1 : ] )
+
 def unregister():
     bpy.utils.unregister_class(AframeExportPanel_PT_Panel)
     bpy.utils.unregister_class(AframeExport_OT_Operator)
-    del bpy.types.Scene.s_aframe_version
-    del bpy.types.Scene.b_stats
-    del bpy.types.Scene.b_vr_controllers
-    del bpy.types.Scene.b_hands
-    del bpy.types.Scene.b_joystick
-    del bpy.types.Scene.b_cubemap
-    del bpy.types.Scene.s_cubemap_path
-    del bpy.types.Scene.b_cubemap_background
-    del bpy.types.Scene.s_cubemap_ext	
-    del bpy.types.Scene.b_blender_lights	
-    del bpy.types.Scene.b_cast_shadows	
-    del bpy.types.Scene.b_lightmaps
-    del bpy.types.Scene.f_player_speed
-    del bpy.types.Scene.f_raycast_length
-    del bpy.types.Scene.f_raycast_interval
-    del bpy.types.Scene.export_path
-    del bpy.types.Scene.s_project_name
-    del bpy.types.Scene.s_output
-    del bpy.types.Scene.b_delete_assets_dir
-    del bpy.types.Scene.b_camera_cube
-    del bpy.types.Scene.f_player_height    
-    del bpy.types.Scene.b_raycast  
-    
+
+    for p in _props:
+        del bpy.types.Scene [ p [ 1 ] ]
 
 # This allows you to run the script directly from Blender's Text editor
 # to test the add-on without having to install it.
