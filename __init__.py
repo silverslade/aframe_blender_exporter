@@ -63,6 +63,12 @@ import os
 import bpy
 import shutil
 from string import Template
+import http.server
+import urllib.request
+import socketserver
+import threading
+
+PORT = 8001
 
 # Constants
 PATH_INDEX = "index.html"
@@ -82,6 +88,43 @@ assets = []
 entities = []
 lights = []
 showstats = ""
+
+# Need to subclass SimpleHTTPRequestHandler so we can serve cache-busting headers
+class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_my_headers()
+        http.server.SimpleHTTPRequestHandler.end_headers(self)
+
+    def send_my_headers(self):
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+
+class Server(threading.Thread):
+    instance = None
+    folder = ""
+    should_stop = False
+        
+    def set_folder(self, folder):
+        self.folder = folder
+        
+    def run(self):
+        Handler = MyHTTPRequestHandler
+        socketserver.TCPServer.allow_reuse_address = True
+        with socketserver.TCPServer(("", PORT), Handler) as httpd:
+            os.chdir(self.folder)
+            while True:
+                if self.should_stop:
+                    httpd.server_close()
+                    break
+                httpd.handle_request()
+
+    def stop(self):
+        self.should_stop = True
+        # Consume the last handle_request call that's still pending
+        with urllib.request.urlopen(f'http://localhost:{PORT}/') as response:
+            html = response.read()
+
 
 # Index html a-frame template
 t = Template('''
@@ -183,7 +226,28 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
         col.separator()
         #col.label(text="Export to a-frame project", icon='NONE')
         col.operator('aframe.export', text='Export A-Frame Project')
+        serve_label = "Stop Serving" if Server.instance else "Start Serving"
+        col.operator('aframe.serve', text=serve_label)
+        if Server.instance:
+            col.operator("wm.url_open", text="Open Preview").url = f'http://localhost:{PORT}'
         col.label(text=scene.s_output, icon='INFO')
+        
+class AframeServe_OT_Operator(bpy.types.Operator):
+    bl_idname = "aframe.serve"
+    bl_label = "Serve Aframe Preview"
+    bl_description = "Serve AFrame"
+    
+    def execute(self, content):
+        if (Server.instance):
+            Server.instance.stop()
+            Server.instance = None
+            return {'FINISHED'}
+        scene = content.scene
+        Server.instance = Server()
+        Server.instance.set_folder(os.path.join ( scene.export_path, scene.s_project_name ))
+        Server.instance.start()
+        
+        return {'FINISHED'}
 
 class AframeExport_OT_Operator(bpy.types.Operator):
     bl_idname = "aframe.export"
@@ -403,7 +467,8 @@ def register():
 
     bpy.utils.register_class(AframeExportPanel_PT_Panel)
     bpy.utils.register_class(AframeExport_OT_Operator)
-
+    bpy.utils.register_class(AframeServe_OT_Operator)
+    
     for p in _props:
         if p [ 0 ] == 'str': _reg_str ( scn, * p [ 1 : ] )
         if p [ 0 ] == 'bool': _reg_bool ( scn, * p [ 1 : ] )
@@ -412,6 +477,7 @@ def register():
 def unregister():
     bpy.utils.unregister_class(AframeExportPanel_PT_Panel)
     bpy.utils.unregister_class(AframeExport_OT_Operator)
+    bpy.utils.unregister_class(AframeServe_OT_Operator)
 
     for p in _props:
         del bpy.types.Scene [ p [ 1 ] ]
