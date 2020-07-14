@@ -52,8 +52,8 @@ bl_info = {
     "name" : "Import-Export: a-frame webvr exporter",
     "author" : "Alessandro Schillaci",
     "description" : "Blender Exporter to AFrame WebVR application",
-    "blender" : (2, 80, 0),
-    "version" : (0, 0, 3),
+    "blender" : (2, 83, 0),
+    "version" : (0, 0, 4),
     "location" : "View3D",
     "warning" : "",
     "category" : "3D View"
@@ -128,10 +128,10 @@ class Server(threading.Thread):
 
 # Index html a-frame template
 t = Template('''
-<!-- Do not edit: generated automatically by AFRAME Exporter -->
+<!-- Generated automatically by AFRAME Exporter for Blender - https://silverslade.itch.io/a-frame-blender-exporter -->
 <html>
 	<head>
-		<title>WebVR Application</title>
+		<title>WebXR Application</title>
 		<link rel="icon" type="image/png" href="favicon.ico"/>
 		<meta name="description" content="3D Application">
 		<meta charset="utf-8">
@@ -176,13 +176,13 @@ t = Template('''
 		</a-scene>
 	</body>
 </html>
-<!-- Do not edit: generated automatically by AFRAME Exporter -->
+<!-- Generated automatically by AFRAME Exporter for Blender - https://silverslade.itch.io/a-frame-blender-exporter -->
 ''')
 
 
 class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_idname = "AFRAME_EXPORT_PT_Panel"
-    bl_label = "Aframe Exporter (v 0.0.3)"
+    bl_label = "Aframe Exporter (v 0.0.4) preview"
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -206,7 +206,7 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.prop(scene, "b_camera_cube")
             box.prop(scene, "b_show_env_sky")                  
             box.prop(scene, "b_cubemap_background")
-            box.prop(scene, "s_cubemap_path", text="test")
+            box.prop(scene, "s_cubemap_path")
             box.prop(scene, "s_cubemap_ext")      
         #col.prop(scene, "b_blender_lights")
         col.prop(scene, "b_cast_shadows")

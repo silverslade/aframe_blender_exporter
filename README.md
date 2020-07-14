@@ -1,7 +1,10 @@
 # Blender Exporter to A-Frame VR
 
 
-This Blender add-on will allow you to model your scene in Blender and export to an A-Frame VR project with a single click. This is an open source project under MIT terms, so feel free to email me or ask for a pull request.
+This Blender add-on allows you to model your scene in Blender and export it to an A-Frame VR project with a single click. 
+The generated sources can be modified manually according to your project needs.
+
+This is an open source project under MIT terms, so feel free to email me or ask for a pull request.
 
 
 <p align="center">
@@ -10,7 +13,7 @@ This Blender add-on will allow you to model your scene in Blender and export to 
 
 ## Features
 
-+ Pure Blender AddOn (tested on Blender 2.83)
++ Pure Blender Add-On (tested on Blender 2.83)
 + Simple UI for configuration
 + It exports and creates a new A-Frame project
 + Optimized Pipeline: Model with blender -> export -> test on browser
@@ -39,10 +42,11 @@ This Addon manages the following settings (all of them switchable inside the UI)
 ## Installation
 
 + Download the latest release version from [Itch.io](https://silverslade.itch.io/a-frame-blender-exporter)
-+ Open Blender (2.80+)
++ Open Blender (2.83+)
 + Edit -> Preferences -> Add-ons -> Install
 + Browse and choose the addon zip file
 + Enable the addon
++ Note: This addon requires the glTF Exporter 2.0 (Add-on version v1.2.75)
 
 ## How to use the Addon
 
@@ -55,8 +59,9 @@ This Addon manages the following settings (all of them switchable inside the UI)
 + Open the View3D window (`n` key) to show the export window.
 + Set up your settings
 + Click on `Export to A-Frame project`
-+ Launch a local web server to test your WebVR page: there are several possibilities, the best are nodejs or python inside the output target directory)
-    + run `live-server` (install it with `npm install -g live-server`) or
++ Launch a local web server to test your WebVR page: there are several possibilities
+    + run the embedded server, click on the `Start Serving` button
+    + run `live-server` (install it with `npm install -g live-server`)
     + run `python -m SimpleHTTPServer`
 
 For better instructions, see the official [project page](https://silverslade.itch.io/a-frame-blender-exporter).
@@ -73,11 +78,11 @@ For better instructions, see the official [project page](https://silverslade.itc
 | Cast Shadows   | For dynamic lights and shadows.| `False`    | 
 | Enable Raycast   | Activate a raycast for interactions | `False`     | 
 | Name   | Project name. It's the target directory where your project will be created. | `aframe-prj`       | 
-| Export To   | Target Directory where the `Name` Directory will be created | `C:\temp\` | 
+| Export To   | Target Directory where the `Name` Directory will be created | `/ramdisk/` | 
+| Clear Assets Dir before export   | Clear the "assets" directory before do the export | `False` | 
+| Start Serving   | Run a local HTTP server instance |  | 
 
 # Credits
-
-## Contributors
 
 In collaboration with `Andrea Rotondo`, a VR Expert since 1998
 informations and contacs: 
@@ -85,6 +90,9 @@ informations and contacs:
 + http://virtual-art.it
 + https://www.facebook.com/wox76
 + https://www.facebook.com/groups/134106979989778/
+
+## Contributors
+[@msfeldstein](https://github.com/msfeldstein)
 
 ## Third Party Components
 This Addon Uses the following 3rd Party Software (or their integration/modification):
