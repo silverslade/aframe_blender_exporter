@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.0.4] - WIP
+## [0.0.4] - 2020-07-17
 
 - Built in HTTP Server for preview, thanks to [@msfeldstein](https://github.com/msfeldstein).
 
