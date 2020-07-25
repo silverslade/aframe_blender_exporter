@@ -1,0 +1,27 @@
+/* to display text in front of the aframe canvas*/
+/*
+a-scene{
+  z-index: -1;
+}
+*/
+
+.controller {
+    position: fixed;
+    display: block;
+    width: 100px;
+    height: 100px;
+    left: 25px;
+    bottom: 20px;
+    background-color: #c8c8c880;
+    z-index: 20;
+    border-radius: 50%;
+    border: 3px solid gray;
+    background-image: url("/resources/controller.png");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 32px 32px;
+    filter: alpha(opacity=50);
+    -khtml-opacity: 0.5;
+    -moz-opacity: 0.5;
+    opacity: 0.5;
+}
