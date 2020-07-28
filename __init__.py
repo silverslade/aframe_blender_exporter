@@ -59,7 +59,7 @@ bl_info = {
     "author" : "Alessandro Schillaci",
     "description" : "Blender Exporter to AFrame WebVR application",
     "blender" : (2, 83, 0),
-    "version" : (0, 0, 5),
+    "version" : (0, 0, 6),
     "location" : "View3D",
     "warning" : "",
     "category" : "3D View"
@@ -205,7 +205,7 @@ t = Template('''
 
 class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_idname = "AFRAME_EXPORT_PT_Panel"
-    bl_label = "Aframe Exporter (v 0.0.5)"
+    bl_label = "Aframe Exporter (v 0.0.6b2)"
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -213,62 +213,108 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
     def draw(self, content):
         scene = content.scene
         layout = self.layout
-        col = layout.column(align=False)
-        row = col.row()
+        layout.use_property_split=True
+        layout.use_property_decorate = False
+        #col = layout.column(align=False)
+        #col = layout.column(align=True)
+        #row = col.row()
         #col.label(text="Exporter Settings", icon='NONE')
-        col.prop(scene, "s_aframe_version")
-        col.prop(scene, "b_stats")
-        col.prop(scene, "b_joystick")
-        col.prop(scene, "b_vr_controllers")
-        #col.prop(scene, "b_hands")
-
-        #col.separator()
-        col.prop(scene, "b_cubemap")
-        if scene.b_cubemap:
-            box = col.box()
+        row = layout.row(align=True)        
+        row.prop(scene, 'b_settings', text= "A-Frame", icon="TRIA_DOWN" if getattr(scene, 'b_settings') else "TRIA_RIGHT", icon_only=False, emboss=True)
+        if scene.b_settings:
+            row = layout.row(align=True)
+            box = row.box()
+            box.prop(scene, "s_aframe_version")
+            box.prop(scene, "b_stats")
+            box.prop(scene, "b_joystick")
+            box.prop(scene, "b_vr_controllers")
+            #col.prop(scene, "b_hands")
+            box.prop(scene, "b_cubemap")
             box.prop(scene, "b_camera_cube")
             box.prop(scene, "b_show_env_sky")                  
             box.prop(scene, "b_cubemap_background")
             box.prop(scene, "s_cubemap_path")
             box.prop(scene, "s_cubemap_ext")      
-        #col.prop(scene, "b_blender_lights")
-        col.prop(scene, "b_cast_shadows")
-        col.prop(scene, "b_raycast")
-        if scene.b_raycast:
-            box = col.box()
+            #col.prop(scene, "b_blender_lights")
+            box.prop(scene, "b_cast_shadows")
+            box.separator()
+        row = layout.row(align=True) 
+        row.prop(scene, 'b_player', text= "Player", icon="TRIA_DOWN" if getattr(scene, 'b_player') else "TRIA_RIGHT", icon_only=False, emboss=True)
+        if scene.b_player:     
+            row = layout.row(align=True)           
+            box = row.box()
+            box.prop(scene, "b_raycast")
             box.prop(scene, "f_raycast_length")
             box.prop(scene, "f_raycast_interval")
-        #col.prop(scene, "b_lightmaps")
-        col.separator()
-        col.prop(scene, "f_player_height")
-        col.prop(scene, "f_player_speed")
-        col.separator()
-        col.prop(scene, "s_project_name")
-        col.prop(scene, "export_path")
-        col.prop(scene, "b_use_lightmapper")
-        if scene.b_use_lightmapper:
-            box = col.box()
-            #box.label(text="Use Lightmapper for bake lightmaps", icon='INFO')
-            box.label(text="1. Select items -> click 'Prepare Selection for Lightmapper'", icon='NONE')                        
-            box.label(text="2. Lightmapper Add-on -> click 'Bake Lightmaps'", icon='NONE')            
-            box.label(text="3. 'Save Lightmaps' to save to 'Lightmaps' dir", icon='NONE')            
-            box.label(text="4. Lightmapper Add-on ->click 'Clean Lightmaps'", icon='NONE')                        
-            box.label(text="5. 'Export A-Frame Project' as usual", icon='NONE')              
-            box.label(text="6. 'Clear All LIghtmaps' if you change the bake", icon='NONE')                          
-            box.operator('aframe.prepare', text='Prepare Selection for Lightmapper')
-            box.operator('aframe.clear', text='Clear All lightmaps')        
-            box.operator('aframe.savelm', text='Save Lightmaps')
-                        
-        #col.separator()
-        #col.label(text="Export to a-frame project", icon='NONE')
-#        col.operator('aframe.loadlm', text='Load lightmaps')
-        col.operator('aframe.clear_asset_dir', text='Crear Assets Directory')
-        col.operator('aframe.export', text='Export A-Frame Project')
+            box.prop(scene, "f_player_height")
+            box.prop(scene, "f_player_speed")
+            box.separator()
+        row = layout.row(align=True)      
+        row.prop(scene, 'b_interactive', text= "Interactive", icon="TRIA_DOWN" if getattr(scene, 'b_interactive') else "TRIA_RIGHT", icon_only=False, emboss=True)
+        if scene.b_interactive:     
+            row = layout.row(align=True)           
+            box = row.box()
+            box.label(text="Add interactive action to selected", icon='NONE')  
+            box.operator("aframe.rotation360")
+            box.operator("aframe.linkurl")
+            box.operator("aframe.videoplay")
+        row = layout.row(align=True)      
+
+        row.prop(scene, 'b_bake', text= "Bake", icon="TRIA_DOWN" if getattr(scene, 'b_bake') else "TRIA_RIGHT", icon_only=False, emboss=True)
+        if scene.b_bake:
+            row = layout.row(align=True)   
+            box = row.box()
+            #box.separator()
+            box.prop(scene, "b_use_lightmapper")
+            box.operator('aframe.delete_lightmap', text='0 Delete All lightmaps')        
+            box.operator('aframe.prepare', text='1 Prepare Selection for Lightmapper')
+            box.operator('aframe.bake', text='2 Bake with Lightmapper')
+            box.operator('aframe.savelm', text='3 Save Lightmaps')   
+            box.operator('aframe.clean', text='4 Clean Lightmaps')            
+            #box.separator()         
+        row = layout.row(align=True)  
+        
+        row.prop(scene, 'b_export', text= "Exporter", icon="TRIA_DOWN" if getattr(scene, 'b_export') else "TRIA_RIGHT", icon_only=False, emboss=True)
+        if scene.b_export:
+            row = layout.row(align=True)   
+            box = row.box()            
+            box.prop(scene, "s_project_name")
+            box.prop(scene, "export_path")
+            box.operator('aframe.clear_asset_dir', text='Clear Assets Directory')
+
+        row = layout.row(align=True)       
+        row = layout.row(align=True) 
+        row.operator('aframe.export', text='Export A-Frame Project')
+        row = layout.row(align=True) 
         serve_label = "Stop Serving" if Server.instance else "Start Serving"
-        col.operator('aframe.serve', text=serve_label)
+        row.operator('aframe.serve', text=serve_label)
+        row = layout.row(align=True) 
         if Server.instance:
-            col.operator("wm.url_open", text="Open Preview").url = f'http://localhost:{PORT}'
-        col.label(text=scene.s_output, icon='INFO')
+            row.operator("wm.url_open", text="Open Preview").url = f'http://localhost:{PORT}'
+            row = layout.row(align=True) 
+        row.label(text=scene.s_output, icon='INFO')
+
+class AframeClean_OT_Operator(bpy.types.Operator):
+    bl_idname = "aframe.clean"
+    bl_label = "Clean"
+    bl_description = "Clean"
+        
+    def execute(self, content):
+        # TODO checkout is add-on is present
+        bpy.ops.tlm.clean_lightmaps("INVOKE_DEFAULT")
+        print("cleaning baked lightmaps")
+        return {'FINISHED'}   
+
+class AframeBake_OT_Operator(bpy.types.Operator):
+    bl_idname = "aframe.bake"
+    bl_label = "Bake"
+    bl_description = "Bake"
+        
+    def execute(self, content):
+        # TODO checkout is add-on is present
+        bpy.ops.tlm.build_lightmaps("INVOKE_DEFAULT")
+        print("internal bake")
+        return {'FINISHED'}        
 
 class AframeClearAsset_OT_Operator(bpy.types.Operator):
     bl_idname = "aframe.clear_asset_dir"
@@ -310,9 +356,9 @@ class AframePrepare_OT_Operator(bpy.types.Operator):
         return {'FINISHED'}
 
 class AframeClear_OT_Operator(bpy.types.Operator):
-    bl_idname = "aframe.clear"
-    bl_label = "Clear generated lightmaps"
-    bl_description = "Clear Lightmaps"
+    bl_idname = "aframe.delete_lightmap"
+    bl_label = "Delete generated lightmaps"
+    bl_description = "Delete Lightmaps"
     
     def execute(self, content):
         scene = content.scene
@@ -334,7 +380,8 @@ class AframeClear_OT_Operator(bpy.types.Operator):
         
         #if os.path.exists(os.path.join(DEST_RES, PATH_LIGHTMAPS)):
         #    shutil.rmtree(os.path.join(DEST_RES,PATH_LIGHTMAPS))
-        
+        #bpy.ops.tlm.build_lightmaps()
+
         return {'FINISHED'}
 
 class AframeSavelm_OT_Operator(bpy.types.Operator):
@@ -640,12 +687,13 @@ class AframeExport_OT_Operator(bpy.types.Operator):
             file.write(s)
 
         scene.s_output = str(exported_obj)+" meshes exported"
+        #self.report({'INFO'}, str(exported_obj)+" meshes exported")
         return {'FINISHED'}
 
 
 # ------------------------------------------- REGISTER / UNREGISTER
 _props = [
-    ("str", "s_aframe_version", "A-Frame", "A-Frame version", "1.0.4" ),
+    ("str", "s_aframe_version", "A-Frame version", "A-Frame version", "1.0.4" ),
     ("bool", "b_stats", "Show Stats", "Enable rendering stats in game" ),
     ("bool", "b_vr_controllers", "Enable VR Controllers (HTC,Quest)", "Enable HTC/Quest Controllers in game", True ),
     ("bool", "b_hands", "Use Hands Models", "Use hands models instead of controllers", True ),
@@ -663,12 +711,50 @@ _props = [
     ("str", "export_path", "Export To","Path to the folder containing the files to import", "C:/Temp/", 'FILE_PATH'),
     ("str", "s_project_name", "Name", "Project's name","aframe-prj"),
     ("str", "s_output", "output","output export","output"),
-    ("bool", "b_use_lightmapper", "Use Lightmapper Add-on for bake lightmaps","Use Lightmapper for baking" ),
+    ("bool", "b_use_lightmapper", "Bake with Lightmapper Add-on","Use Lightmapper for baking" ),
     ("bool", "b_camera_cube", "Camera Cube Env","Enable Camera Cube Env component"),
     ("float", "f_player_height", "Player Height","Player Height", 1.7),
     ("bool", "b_raycast", "Enable Raycast","Enable Raycast"),
     ("bool", "b_show_env_sky", "Show Environment Sky","Show Environment Sky"),
+    ("bool", "b_settings", "A-Frame settings","b_settings"),
+    ("bool", "b_player", "Player settings","b_player"),    
+    ("bool", "b_interactive", "Interactive","b_interactive"),        
+    ("bool", "b_export", "Exporter settings","b_export"),    
+    ("bool", "b_bake", "Bake settings","b_bake"),        
 ]
+
+class Rotation360(bpy.types.Operator):
+    bl_idname = 'aframe.rotation360'
+    bl_label = 'Rotate360Z'
+    bl_description = 'Rotation Object 360 on Z axis'
+    def execute(self, context):
+        try:
+           bpy.context.active_object["AFRAME_ANIMATION"] = "property: rotation; to: 0 360 0; loop: true; dur: 10000"
+        except Exception as e:
+            bpy.ops.wm.popuperror('INVOKE_DEFAULT', e = str(e))
+        return {'FINISHED'}
+
+class LinkUrl(bpy.types.Operator):
+    bl_idname = 'aframe.linkurl'
+    bl_label = 'Link Web'
+    bl_description = 'Insert URL WEB'
+    def execute(self, context):
+        try:
+           bpy.context.active_object["AFRAME_HTTP_LINK"] = "http://www.google.com"
+        except Exception as e:
+            bpy.ops.wm.popuperror('INVOKE_DEFAULT', e = str(e))
+        return {'FINISHED'}
+
+class VideoPlay(bpy.types.Operator):
+    bl_idname = 'aframe.videoplay'
+    bl_label = 'Video'
+    bl_description = 'Insert Video'
+    def execute(self, context):
+        try:
+           bpy.context.active_object["AFRAME_VIDEO"] = "test.mp4"
+        except Exception as e:
+            bpy.ops.wm.popuperror('INVOKE_DEFAULT', e = str(e))
+        return {'FINISHED'}
 
 
 def _reg_bool ( scene, prop, name, descr, default = False ):
@@ -688,12 +774,17 @@ def register():
     scn = bpy.types.Scene
 
     bpy.utils.register_class(AframeExportPanel_PT_Panel)
+    bpy.utils.register_class(AframeBake_OT_Operator)
+    bpy.utils.register_class(AframeClean_OT_Operator)
     bpy.utils.register_class(AframeExport_OT_Operator)
     bpy.utils.register_class(AframeServe_OT_Operator)
     bpy.utils.register_class(AframeSavelm_OT_Operator)
     bpy.utils.register_class(AframeClear_OT_Operator)
     bpy.utils.register_class(AframePrepare_OT_Operator)
     bpy.utils.register_class(AframeClearAsset_OT_Operator)    
+    bpy.utils.register_class(Rotation360)
+    bpy.utils.register_class(LinkUrl)
+    bpy.utils.register_class(VideoPlay)
     
     
     for p in _props:
@@ -703,8 +794,17 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(AframeExportPanel_PT_Panel)
+    bpy.utils.unregister_class(AframeBake_OT_Operator)
+    bpy.utils.unregister_class(AframeClean_OT_Operator)    
     bpy.utils.unregister_class(AframeExport_OT_Operator)
     bpy.utils.unregister_class(AframeServe_OT_Operator)
+    bpy.utils.unregister_class(AframeSavelm_OT_Operator)
+    bpy.utils.unregister_class(AframeClear_OT_Operator)
+    bpy.utils.unregister_class(AframePrepare_OT_Operator)
+    bpy.utils.unregister_class(AframeClearAsset_OT_Operator)    
+    bpy.utils.unregister_class(Rotation360)
+    bpy.utils.unregister_class(LinkUrl)
+    bpy.utils.unregister_class(VideoPlay)
 
     for p in _props:
         del bpy.types.Scene [ p [ 1 ] ]
