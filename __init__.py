@@ -205,7 +205,7 @@ t = Template('''
 
 class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_idname = "AFRAME_EXPORT_PT_Panel"
-    bl_label = "Aframe Exporter (v 0.0.6b2)"
+    bl_label = "Aframe Exporter (v 0.0.6b3)"
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -250,12 +250,14 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.prop(scene, "f_player_speed")
             box.separator()
         row = layout.row(align=True)      
-        row.prop(scene, 'b_interactive', text= "Interactive", icon="TRIA_DOWN" if getattr(scene, 'b_interactive') else "TRIA_RIGHT", icon_only=False, emboss=True)
+        row.prop(scene, 'b_interactive', text= "Interactive / Action", icon="TRIA_DOWN" if getattr(scene, 'b_interactive') else "TRIA_RIGHT", icon_only=False, emboss=True)
         if scene.b_interactive:     
             row = layout.row(align=True)           
             box = row.box()
-            box.label(text="Add interactive action to selected", icon='NONE')  
+            box.label(text="Add interactive or action to selected", icon='NONE')  
+            box.operator("aframe.cubemap")
             box.operator("aframe.rotation360")
+            box.operator("aframe.images")
             box.operator("aframe.linkurl")
             box.operator("aframe.videoplay")
         row = layout.row(align=True)      
@@ -476,29 +478,35 @@ class AframeExport_OT_Operator(bpy.types.Operator):
 
         #check if addon or script for correct path
         _resources = [
-            [ ".", "favicon.ico" ],
-            [ ".", "style.css" ],
-            [ PATH_RESOURCES, "sky.jpg" ],
-            [ PATH_RESOURCES, "play.png" ],
-            [ PATH_RESOURCES, "pause.png" ],
-            [ PATH_RESOURCES, "play-skip-back.png" ],
-            [ PATH_RESOURCES, "mute.png" ],
-            [ PATH_RESOURCES, "volume-low.png" ],
-            [ PATH_RESOURCES, "volume-high.png" ],
-            [ PATH_JAVASCRIPT, "webxr.js" ],
-            [ PATH_JAVASCRIPT, "joystick.js" ],
-            [ PATH_JAVASCRIPT, "camera-cube-env.js" ],
-            [ PATH_ENVIRONMENT, "negx.jpg" ],
-            [ PATH_ENVIRONMENT, "negy.jpg" ],
-            [ PATH_ENVIRONMENT, "negz.jpg" ],
-            [ PATH_ENVIRONMENT, "posx.jpg" ],
-            [ PATH_ENVIRONMENT, "posy.jpg" ],
-            [ PATH_ENVIRONMENT, "posz.jpg" ],
+            [ ".", "favicon.ico", True ],
+            [ ".", "style.css" , True],
+            [ PATH_RESOURCES, "sky.jpg", True ],
+            [ PATH_RESOURCES, "play.png", False ],
+            [ PATH_RESOURCES, "pause.png", False],
+            [ PATH_RESOURCES, "play-skip-back.png", False],
+            [ PATH_RESOURCES, "mute.png",False ],
+            [ PATH_RESOURCES, "volume-low.png",False ],
+            [ PATH_RESOURCES, "volume-high.png",False ],
+            [ PATH_MEDIA, "image1.png",False ],
+            [ PATH_MEDIA, "image2.png",False ],                        
+            [ PATH_JAVASCRIPT, "webxr.js", True ],
+            [ PATH_JAVASCRIPT, "joystick.js", True ],
+            [ PATH_JAVASCRIPT, "camera-cube-env.js", True ],
+            [ PATH_ENVIRONMENT, "negx.jpg", True ],
+            [ PATH_ENVIRONMENT, "negy.jpg", True ],
+            [ PATH_ENVIRONMENT, "negz.jpg", True ],
+            [ PATH_ENVIRONMENT, "posx.jpg", True ],
+            [ PATH_ENVIRONMENT, "posy.jpg", True ],
+            [ PATH_ENVIRONMENT, "posz.jpg", True ],
         ]
 
         SRC_RES = os.path.join ( directory, PATH_RESOURCES )
-        for dest_path, fname in _resources:
-            shutil.copyfile ( os.path.join ( SRC_RES, fname ), os.path.join ( DEST_RES, dest_path, fname ) )
+        for dest_path, fname, overwrite in _resources:
+            if overwrite:
+                shutil.copyfile ( os.path.join ( SRC_RES, fname ), os.path.join ( DEST_RES, dest_path, fname ) )
+            else:
+                if not os.path.exists(os.path.join ( DEST_RES, dest_path, fname )):
+                    shutil.copyfile ( os.path.join ( SRC_RES, fname ), os.path.join ( DEST_RES, dest_path, fname ) )                    
 
         # Loop 3D entities
         exclusion_obj_types = ['CAMERA','LAMP','ARMATURE']
@@ -723,9 +731,32 @@ _props = [
     ("bool", "b_bake", "Bake settings","b_bake"),        
 ]
 
+# CUSTOM PROPERTY OPERATORS
+class Images(bpy.types.Operator):
+    bl_idname = 'aframe.images'
+    bl_label = 'Add Toggle Images'
+    bl_description = 'Add two toggle images for selected object'
+    def execute(self, context):
+        try:
+           bpy.context.active_object["AFRAME_IMAGES"] = '{"1": "image1.png", "2": "image2.png"}'
+        except Exception as e:
+            bpy.ops.wm.popuperror('INVOKE_DEFAULT', e = str(e))
+        return {'FINISHED'}
+
+class Cubemap(bpy.types.Operator):
+    bl_idname = 'aframe.cubemap'
+    bl_label = 'Add Cubemap'
+    bl_description = 'Add a cubemap for selected object to make it transparent'
+    def execute(self, context):
+        try:
+           bpy.context.active_object["AFRAME_CUBEMAP"] = "1"
+        except Exception as e:
+            bpy.ops.wm.popuperror('INVOKE_DEFAULT', e = str(e))
+        return {'FINISHED'}
+
 class Rotation360(bpy.types.Operator):
     bl_idname = 'aframe.rotation360'
-    bl_label = 'Rotate360Z'
+    bl_label = 'Add Rotation on Z'
     bl_description = 'Rotation Object 360 on Z axis'
     def execute(self, context):
         try:
@@ -736,7 +767,7 @@ class Rotation360(bpy.types.Operator):
 
 class LinkUrl(bpy.types.Operator):
     bl_idname = 'aframe.linkurl'
-    bl_label = 'Link Web'
+    bl_label = 'Add Link Web'
     bl_description = 'Insert URL WEB'
     def execute(self, context):
         try:
@@ -747,7 +778,7 @@ class LinkUrl(bpy.types.Operator):
 
 class VideoPlay(bpy.types.Operator):
     bl_idname = 'aframe.videoplay'
-    bl_label = 'Video'
+    bl_label = 'Add Video'
     bl_description = 'Insert Video'
     def execute(self, context):
         try:
@@ -785,7 +816,8 @@ def register():
     bpy.utils.register_class(Rotation360)
     bpy.utils.register_class(LinkUrl)
     bpy.utils.register_class(VideoPlay)
-    
+    bpy.utils.register_class(Cubemap)
+    bpy.utils.register_class(Images)        
     
     for p in _props:
         if p [ 0 ] == 'str': _reg_str ( scn, * p [ 1 : ] )
@@ -805,6 +837,8 @@ def unregister():
     bpy.utils.unregister_class(Rotation360)
     bpy.utils.unregister_class(LinkUrl)
     bpy.utils.unregister_class(VideoPlay)
+    bpy.utils.unregister_class(Cubemap)
+    bpy.utils.unregister_class(Images)
 
     for p in _props:
         del bpy.types.Scene [ p [ 1 ] ]
