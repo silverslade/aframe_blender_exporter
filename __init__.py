@@ -547,6 +547,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                 animation = ""
                 link = ""
                 baked = ""
+                custom = ""
                 video = False
                 image = False
 
@@ -561,12 +562,12 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                                     reflections = ' geometry="" camera-cube-env="distance: 500; resolution: 512; repeat: true; interval: 400" '
                                 else:
                                     reflections = ' geometry="" cube-env-map="path: '+scene.s_cubemap_path+'; extension: '+scene.s_cubemap_ext+'; reflectivity: 0.99;" '
-                            if K == "AFRAME_ANIMATION":
+                            elif K == "AFRAME_ANIMATION":
                                 animation = ' animation= "'+obj[K]+'" '
-                            if K == "AFRAME_HTTP_LINK":
+                            elif K == "AFRAME_HTTP_LINK":
                                 #link = ' link="href: '+obj[K]+'" class="clickable" '
                                 link = ' link-handler="target: '+obj[K]+'" class="clickable" '
-                            if K == "AFRAME_VIDEO":
+                            elif K == "AFRAME_VIDEO":
                                 #print("--------------- pos " + actualposition)
                                 #print("--------------- rot " + actualrotation)
                                 #print("--------------- scale " + actualscale)                                
@@ -579,7 +580,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                                 #entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" gltf-model="#'+obj.name+'" material="src: #video_'+str(videocount)+'" scale="'+actualscale+'" rotation="'+actualrotation+'" position="'+actualposition+'"></a-entity>')
                                 video = True
                                 videocount = videocount +1
-                            if K == "AFRAME_IMAGES":
+                            elif K == "AFRAME_IMAGES":
                                 #print(".....images")
                                 image = True
                                 imagecount = imagecount +1
@@ -591,6 +592,9 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                                     #print(key, ":", json_dictionary[key])
                                     assets.append('\n\t\t\t\t<img id="image_'+key+'" src="./media/'+json_dictionary[key]+'"></img>')
                                 entities.append('\n\t\t\t<a-image images-handler id="#i_'+str(imagecount)+'" src="#image_'+key+'" class="clickable" width="1" height="1" scale="'+actualscale+'" position="'+actualposition+'" rotation="'+actualrotation+'" visible="true" shadow="cast: false"></a-image>')
+                            elif K.startswith('AFRAME_'):
+                                attr   = K.split("AFRAME_")[1].lower()
+                                custom = custom+' '+attr+'="'+obj[K]+'"'
 
                     if video == False and image == False:                        
                         # check if baked texture is present on filesystem
@@ -609,9 +613,9 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                         bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True)
                         assets.append('\n\t\t\t\t<a-asset-item id="'+obj.name+'" src="./assets/'+obj.name + '.gltf'+'"></a-asset-item>')
                         if scene.b_cast_shadows:
-                            entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" gltf-model="#'+obj.name+'" scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: true" '+reflections+animation+link+'></a-entity>')
+                            entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" gltf-model="#'+obj.name+'" scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: true" '+reflections+animation+link+custom+'></a-entity>')
                         else:
-                            entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" '+baked+' gltf-model="#'+obj.name+'" scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: false" '+reflections+animation+link+'></a-entity>')
+                            entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" '+baked+' gltf-model="#'+obj.name+'" scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: false" '+reflections+animation+link+custom+'></a-entity>')
                 # deselect object
                 obj.location = location
                 obj.select_set(state=False)
