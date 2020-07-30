@@ -208,7 +208,7 @@ def default_template():
 
 class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_idname = "AFRAME_EXPORT_PT_Panel"
-    bl_label = "Aframe Exporter (v 0.0.6b3)"
+    bl_label = "Aframe Exporter (v 0.0.6b4)"
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -271,6 +271,7 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box = row.box()
             #box.separator()
             box.prop(scene, "b_use_lightmapper")
+            box.prop(scene, "f_lightMapIntensity")
             box.operator('aframe.delete_lightmap', text='0 Delete All lightmaps')        
             box.operator('aframe.prepare', text='1 Prepare Selection for Lightmapper')
             box.operator('aframe.bake', text='2 Bake with Lightmapper')
@@ -607,7 +608,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                         for file in lightmap_files:
                             if obj.name+"_baked" in file:
                                 print("[LIGHTMAP] Found lightmap: "+file)
-                                baked = 'light-map-geometry="path: lightmaps/'+file+'"'
+                                baked = 'light-map-geometry="path: lightmaps/'+file+'; intensity: '+str(scene.f_lightMapIntensity)+'"'
                             
                         filename = os.path.join ( DEST_RES, PATH_ASSETS, obj.name ) # + '.glft' )
                         bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True)
@@ -737,7 +738,8 @@ _props = [
     ("bool", "b_player", "Player settings","b_player"),    
     ("bool", "b_interactive", "Interactive","b_interactive"),        
     ("bool", "b_export", "Exporter settings","b_export"),    
-    ("bool", "b_bake", "Bake settings","b_bake"),        
+    ("bool", "b_bake", "Bake settings","b_bake"),     
+    ("float", "f_lightMapIntensity", "LightMap Intensity","LightMap Intensity", 2.0),        
 ]
 
 # CUSTOM PROPERTY OPERATORS

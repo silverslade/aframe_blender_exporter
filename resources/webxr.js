@@ -64,14 +64,16 @@ function init() {
 AFRAME.registerComponent('light-map-geometry', {
   schema: {
     path: { default: '' },
-    format: { default: 'RGBFormat' }
+    format: { default: 'RGBFormat' },
+	intensity: { default: 1.0}
   },
 
   init: function () {
     const data = this.data;
     const el = this.el;
     this.texture = new THREE.TextureLoader().load(data.path);
-    this.applyLightMap();
+	this.intensity = data.intensity;
+    this.applyLightMap();	
     this.el.addEventListener('object3dset', this.applyLightMap.bind(this));
   },
 
@@ -80,6 +82,7 @@ AFRAME.registerComponent('light-map-geometry', {
     const lightMap = this.texture;
 	this.texture.flipY = false;
     const el = this.el
+	const value = this.intensity;
 
     if (!mesh) return;
     mesh.traverse(function (node) {
@@ -89,8 +92,8 @@ AFRAME.registerComponent('light-map-geometry', {
         //node.geometry.attributes.uv2 = node.geometry.attributes.uv.clone();
       //}
       if (node.material && 'lightMap' in node.material) {
-
         node.material.lightMap = lightMap;
+		node.material.lightMapIntensity = value;
         node.material.needsUpdate = true;
       }
     });
