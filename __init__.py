@@ -138,9 +138,12 @@ class Server(threading.Thread):
 
 
 # Index html a-frame template
-t = Template('''
-<!-- Generated automatically by AFRAME Exporter for Blender - https://silverslade.itch.io/a-frame-blender-exporter -->
-<html>
+def default_template():
+    if not bpy.data.texts.get('index.html'):
+        tpl = bpy.data.texts.new('index.html')
+        tpl.from_string('''<!doctype html>
+<html lang="en">
+    <!-- Generated automatically by AFRAME Exporter for Blender - https://silverslade.itch.io/a-frame-blender-exporter -->
     <head>
         <title>WebXR Application</title>
         <link rel="icon" type="image/png" href="favicon.ico"/>
@@ -671,6 +674,8 @@ class AframeExport_OT_Operator(bpy.types.Operator):
             light_directional_intensity = "1.0"
             light_ambient_intensity = "1.0"
 
+        default_template()
+        t = Template( bpy.data.texts['index.html'].as_string() )
         s = t.substitute(
             asset=all_assets,
             entity=all_entities,

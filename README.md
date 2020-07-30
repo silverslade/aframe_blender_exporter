@@ -69,6 +69,7 @@ This Addon manages the following settings (all of them switchable inside the UI)
     + run the embedded server, click on the `Start Serving` button
     + run `live-server` (install it with `npm install -g live-server`)
     + run `python -m SimpleHTTPServer`
++ Customize the 'index.html'-template in the Script-tab for future exports
 
 For massive exports, 'live-server' could be more useful because it can manage a content auto-refresh.
 
