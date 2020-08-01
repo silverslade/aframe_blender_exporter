@@ -6,7 +6,7 @@ The generated sources can be modified manually according to your project needs a
 This is an open source project under MIT terms, so feel free to email me or ask for a pull request, or just offer me a coffe!
 
 <p align="center">
-  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/aframe_exporter.png">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/aframe_exporter_0_0_6.png">
 </p>
 
 ## Features
@@ -16,9 +16,10 @@ This is an open source project under MIT terms, so feel free to email me or ask 
 + It exports and creates a new A-Frame project
 + Optimized Pipeline: Model with blender -> export -> test on browser
 + Use baked Lightmaps generated with [The Lightmapper Add-on](https://github.com/Naxela/The_Lightmapper) by Naxela
++ Use of a A-Frame html template saved inside the blend file (to make a higher customisation)
 + Open Source (MIT)
 
-## Changelog
+## Changelog & todo
 
 See [here](https://github.com/silverslade/aframe_blender_exporter/blob/master/CHANGELOG.md) for the updated changelog.
 
@@ -77,7 +78,14 @@ For better instructions, see the official [project page](https://silverslade.itc
 
 ### Main UI configuration
 
-Main Ui for the current version 0.0.5.
+Main Ui for the current version 0.0.6.
+For a better usability, the add-on is divided in 5 main panels: a-frame, player, interactive/action, bake, exporter.
+
+#### A-Frame Panel
+
+<p align="center">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/aframe_panel.png">
+</p>
 
 | Property       | Description      | Default Value                          |
 |----------------|------------------|----------------------------------|
@@ -86,20 +94,72 @@ Main Ui for the current version 0.0.5.
 | Show Joystick | Show a icon controller to move player  | `False` | 
 | Enable VR Controllers (HTC, Quest) | Enable Controllers for further inteactions  | `False` | 
 | Cube Env Map | For skybox reflections (but not objects reflections). To get objects reflections also, enable the `Camera Cube Env` | `False` | 
+| Camera Cube Env | with objects reflections | `False` | 
+| Show Enviroment Sky | Activate a default skybox | `False` | 
+| Enable Background | Camera cube env with background sky | `False` | 
+| Path | directory path for the equirectangular sky  | `/env/` | 
+| Ext | with objects reflections | `jpg` | 
 | Cast Shadows | For dynamic lights and shadows.| `False` | 
+
+#### Player Panel
+
+<p align="center">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/player_panel.png">
+</p>
+
+| Property       | Description      | Default Value                          |
+|----------------|------------------|----------------------------------|
 | Enable Raycast | Activate a raycast for interactions. You can set length and interval values | `False` | 
+| Raycast Length | Set the Length of the raycast. Shorter or turned off is for better performance | `4.0` | 
+| Raycast Interval | Set the polling interval in msec. Higher is for better performance  | `2000.0` | 
 | Player Height | Set the Height of the main camera | `1.70` | 
 | Player Speed | Set the Speed of the player | `0.1` | 
+
+#### Interactive/Action Panel
+
+<p align="center">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/interactive_panel.png">
+</p>
+
+| Property       | Description      | Default Value                          |
+|----------------|------------------|----------------------------------|
+| Add Cubemap | Enable the reflections for the selected object  |  | 
+| Add Rotation on Z | Enable rotation animation on Z axis for the selected object  |  | 
+| Add Toggle Images | set 2 images toggling with click on the selected object (plane mesh)  |  | 
+| Add Link Web | Enable html link when clicking on the selected object  |  | 
+| Add Video | set a mp4 video for the selected object  (plane mesh) |  | 
+
+#### Bake Panel
+
+<p align="center">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/bake_panel.png">
+</p>
+
+| Property       | Description      | Default Value                          |
+|----------------|------------------|----------------------------------|
+| Use Lightmapper Add-on for bake lightmaps | If checked the generated lightmaps will be used for the meshes| `False` | 
+| 0 "Delete all Lightmaps" | clear memory and files lightmaps |  | 
+| 1 "Prepare Selection for Lightmapper" | select objects for bake and set Lightmapper configuration| WIP  | 
+| 2 "Bake with Lightmapper" | Bake with the Lightmapper add-on | (wait the end of the process, better is toggle on Window -> System Console) | 
+| 3 "Save Lightmaps" | all lightmaps will be copied inside a "lightmaps" directory in the target project |  | 
+| 4 "Clean Lightmaps | it's needed because the changes to the shaders can be incompatible with A-Frame |  | 
+
+
+#### Exporter Panel
+
+<p align="center">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/export_panel.png">
+</p>
+
+| Property       | Description      | Default Value                          |
+|----------------|------------------|----------------------------------|
 | Name | Project name. It's the target directory where your project will be created. | `aframe-prj`       | 
 | Export To | Target Directory where the `Name` Directory will be created | `C:/temp/` | 
-| Use Lightmapper Add-on for bake lightmaps | If checked, a menu will be shown, with instructions | `False` | 
 | Clear Assets Directory | To remove old 3d models from the main assets dir |  | 
-| Export to A-Frame Project | The project files ready to run will be created in the target directory |  | 
-| Start Serving | Run a local HTTP server instance |  | 
 
 ### The Lightmapper Add-on
 
-Since the 0.0.5 version, the A-Frame Exporter will be compatible with the Lightmapper Add-on by Naxela.
+Since the 0.0.5+ version, the A-Frame Exporter will be compatible with the Lightmapper Add-on by Naxela.
 
 The Lightmapper Add-on is an open source Blender Add-on project for an incredibly quick baking process: it uses the GPU and it can be configured to use a denoiser and an open CV module to clean the lightmaps. It can be much faster than the Blender Bake standard process.
 
@@ -107,13 +167,14 @@ To use the Lightmapper for baking lightmaps:
 
 + Install the Add-on from [Here](https://github.com/Naxela/The_Lightmapper)
 + Install and configure the denoise and opencv 
-+ Aframe exporter - untick the "Cast Shadows" option
-+ Select objects to be baked
-+ Aframe exporter - Click on "Prepare Selection for Lightmapper"
-+ Lightmapper panel - click on "Bake Lightmaps" (wait the end of the process, better is toggle on Window -> System Console)
-+ Aframe exporter - click on "Save Lightmaps" (all lightmaps will be copied inside a "lightmaps" directory in the target project)
-+ Lightmapper panel - click on "Clean Lightmaps" (it's needed because the changes to the shaders can be incompatible with A-Frame)
-+ Aframe exporter - click on "Export A-Frame project" (it will load the saved lightmaps and it will apply them to the a frame component)
++ Untick the "Cast Shadows" option
++ Open the "Bake" panel and follow the enumerated buttons
++ 0 "Delete all Lightmaps"
++ 1 "Prepare Selection for Lightmapper"
++ 2 "Bake with Lightmapper" (wait the end of the process, better is toggle on Window -> System Console)
++ 3 "Save Lightmaps" (all lightmaps will be copied inside a "lightmaps" directory in the target project)
++ 4 "Clean Lightmaps" (it's needed because the changes to the shaders can be incompatible with A-Frame)
++ Then you can use Aframe exporter as usual - "Export A-Frame project" (it will load the saved lightmaps and it will apply them to the a frame component)
 + Remember to make backups. Often.
 
 Though the process may seem quite rough, it works. In the future release I'll work for a more linear process.
@@ -130,6 +191,8 @@ informations and contacs:
 
 ## Contributors
 + HTTP Embedded Server - [@msfeldstein](https://github.com/msfeldstein)
++ embedded index.html template - [@coderofsalvation](https://github.com/coderofsalvation)
+
 
 ## Third Party Components
 This Addon Uses the following 3rd Party Software (or their integration/modification):

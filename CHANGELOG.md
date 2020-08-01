@@ -1,9 +1,29 @@
 # Changelog
 
+## TODO
+- click to show/hide a 3D object
+- click to toogle a 3D object
+- 
+
+## CHANGELOG
+
 All notable changes to this project will be documented in this file.
 
 - NEW = New Feature
 - FIX = Bug Fix
+
+## [0.0.6] - 2020-08-01
+
+- [NEW] index.html template saved inside blend file after the first export, thanks to [@coderofsalvation](https://github.com/coderofsalvation)
+- [NEW] UI Layout refactored
+- [NEW] Better Panel to use Lightmapper's bake
+- [NEW] Add object actions: 
+    - Rotation360: rotate on Z axis an object
+    - LinkUrl: add a html link when click on object
+    - VideoPlay: add a video on plane object (it needs a mp4 file inside "media" directory)
+    - Toogle Images
+- Use of generic custom property "AFRAME_XXX" to manage custom actions (e.g: AFRAME_FOO-BAR wil be convereted in <a-entity .... foo-bar="{value)">), thanks to [@coderofsalvation](https://github.com/coderofsalvation)
+- [NEW] add an intensity value to be applied to generated lightmaps
 
 ## [0.0.5] - 2020-07-25
 
@@ -19,7 +39,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.0.4] - 2020-07-17
 
-- [NEW] Built in HTTP Server for preview, thanks to [@msfeldstein](https://github.com/msfeldstein).
+- [NEW] Built in HTTP Server for preview, thanks to [@msfeldstein](https://github.com/msfeldstein)
 
 ## [0.0.3] - 2020-07-15
 
