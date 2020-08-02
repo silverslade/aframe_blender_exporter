@@ -190,9 +190,10 @@ informations and contacs:
 + https://www.facebook.com/groups/134106979989778/
 
 ## Contributors
+
++ Code Refactoring - [@fsoft72](https://github.com/fsoft72)
 + HTTP Embedded Server - [@msfeldstein](https://github.com/msfeldstein)
 + embedded index.html template - [@coderofsalvation](https://github.com/coderofsalvation)
-
 
 ## Third Party Components
 This Addon Uses the following 3rd Party Software (or their integration/modification):
