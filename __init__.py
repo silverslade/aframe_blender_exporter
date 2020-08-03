@@ -594,7 +594,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                                 entities.append('\n\t\t\t<a-image images-handler id="#i_'+str(imagecount)+'" src="#image_'+key+'" class="clickable" width="1" height="1" scale="'+actualscale+'" position="'+actualposition+'" rotation="'+actualrotation+'" visible="true" shadow="cast: false"></a-image>')
                             elif K.startswith('AFRAME_'):
                                 attr   = K.split("AFRAME_")[1].lower()
-                                custom = custom+' '+attr+'="'+obj[K]+'"'
+                                custom = custom+' '+attr+'="'+str(obj[K])+'"'
 
                     if video == False and image == False:                        
                         # check if baked texture is present on filesystem
