@@ -483,7 +483,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
         _resources = [
             [ ".", "favicon.ico", True ],
             [ ".", "style.css" , True],
-            [ PATH_RESOURCES, "sky.jpg", True ],
+            [ PATH_RESOURCES, "sky.jpg", False ],
             [ PATH_RESOURCES, "play.png", False ],
             [ PATH_RESOURCES, "pause.png", False],
             [ PATH_RESOURCES, "play-skip-back.png", False],
