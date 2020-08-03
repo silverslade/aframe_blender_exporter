@@ -59,7 +59,7 @@ bl_info = {
     "author" : "Alessandro Schillaci",
     "description" : "Blender Exporter to AFrame WebVR application",
     "blender" : (2, 83, 0),
-    "version" : (0, 0, 6),
+    "version" : (0, 0, 7),
     "location" : "View3D",
     "warning" : "",
     "category" : "3D View"
@@ -208,7 +208,7 @@ def default_template():
 
 class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_idname = "AFRAME_EXPORT_PT_Panel"
-    bl_label = "Aframe Exporter (v 0.0.6b4)"
+    bl_label = "Aframe Exporter (v 0.0.7p1)"
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -261,8 +261,14 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.operator("aframe.cubemap")
             box.operator("aframe.rotation360")
             box.operator("aframe.images")
-            box.operator("aframe.linkurl")
-            box.operator("aframe.videoplay")
+            
+            row = box.column_flow(columns=2, align=False)
+            row.operator("aframe.linkurl")
+            row.prop(scene, "s_link", text="")
+            
+            row = box.column_flow(columns=2, align=False)
+            row.operator("aframe.videoplay")
+            row.prop(scene, "s_video", text="")
         row = layout.row(align=True)      
 
         row.prop(scene, 'b_bake', text= "Bake", icon="TRIA_DOWN" if getattr(scene, 'b_bake') else "TRIA_RIGHT", icon_only=False, emboss=True)
@@ -739,7 +745,9 @@ _props = [
     ("bool", "b_interactive", "Interactive","b_interactive"),        
     ("bool", "b_export", "Exporter settings","b_export"),    
     ("bool", "b_bake", "Bake settings","b_bake"),     
-    ("float", "f_lightMapIntensity", "LightMap Intensity","LightMap Intensity", 2.0),        
+    ("float", "f_lightMapIntensity", "LightMap Intensity","LightMap Intensity", 2.0),     
+    ("str", "s_link", "Link Url", "Link Url" , "https://www.google.it/"),    
+    ("str", "s_video", "Video File Name", "Video File Name" , "video.mp4"),        
 ]
 
 # CUSTOM PROPERTY OPERATORS

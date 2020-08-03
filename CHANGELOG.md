@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 - NEW = New Feature
 - FIX = Bug Fix
 
+## [0.0.7] work in progress
+
+- [NEW] add a link web text field
+
 ## [0.0.6] - 2020-08-01
 
 - [NEW] index.html template saved inside blend file after the first export, thanks to [@coderofsalvation](https://github.com/coderofsalvation)
