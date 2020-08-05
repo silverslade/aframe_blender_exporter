@@ -45,6 +45,7 @@ AVAILABLE CUSTOM_PROPERTIES:
     - AFRAME_HTTP_LINK: html link when click on object       
     - AFRAME_VIDEO: target=mp4 video to show
     - AFRAME_IMAGES: click to swap images e.g: {"1": "image1.jpg", "2": "image2.jpg"}
+    - AFRAME_SHOW_HIDE_OBJECT: click to show or hide another 3d object
 
 THIRD PARTY SOFTWARE:
     This Addon Uses the following 3rdParty software (or their integration/modification):
@@ -261,6 +262,14 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.operator("aframe.cubemap")
             box.operator("aframe.rotation360")
             box.operator("aframe.images")
+        
+            row = box.column_flow(columns=2, align=False)
+            row.operator("aframe.show_hide_object")
+            row.prop(scene, "s_showhide_object", text="")
+
+            row = box.column_flow(columns=2, align=False)
+            row.operator("aframe.toggle_object")
+            row.prop(scene, "s_toggle_object", text="")            
             
             row = box.column_flow(columns=2, align=False)
             row.operator("aframe.linkurl")
@@ -305,6 +314,7 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             row.operator("wm.url_open", text="Open Preview").url = f'http://localhost:{PORT}'
             row = layout.row(align=True) 
         row.label(text=scene.s_output, icon='INFO')
+
 
 class AframeClean_OT_Operator(bpy.types.Operator):
     bl_idname = "aframe.clean"
@@ -555,6 +565,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                 link = ""
                 baked = ""
                 custom = ""
+                toggle = ""
                 video = False
                 image = False
 
@@ -599,6 +610,8 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                                     #print(key, ":", json_dictionary[key])
                                     assets.append('\n\t\t\t\t<img id="image_'+key+'" src="./media/'+json_dictionary[key]+'"></img>')
                                 entities.append('\n\t\t\t<a-image images-handler id="#i_'+str(imagecount)+'" src="#image_'+key+'" class="clickable" width="1" height="1" scale="'+actualscale+'" position="'+actualposition+'" rotation="'+actualrotation+'" visible="true" shadow="cast: false"></a-image>')
+                            elif K == "AFRAME_SHOW_HIDE_OBJECT":
+                                toggle = ' toggle-handler="target: #'+obj[K]+';" class="clickable" '
                             elif K.startswith('AFRAME_'):
                                 attr   = K.split("AFRAME_")[1].lower()
                                 custom = custom+' '+attr+'="'+str(obj[K])+'"'
@@ -620,9 +633,9 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                         bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True)
                         assets.append('\n\t\t\t\t<a-asset-item id="'+obj.name+'" src="./assets/'+obj.name + '.gltf'+'"></a-asset-item>')
                         if scene.b_cast_shadows:
-                            entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" gltf-model="#'+obj.name+'" scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: true" '+reflections+animation+link+custom+'></a-entity>')
+                            entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" gltf-model="#'+obj.name+'" scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: true" '+reflections+animation+link+custom+toggle+'></a-entity>')
                         else:
-                            entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" '+baked+' gltf-model="#'+obj.name+'" scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: false" '+reflections+animation+link+custom+'></a-entity>')
+                            entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" '+baked+' gltf-model="#'+obj.name+'" scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: false" '+reflections+animation+link+custom+toggle+'></a-entity>')
                 # deselect object
                 obj.location = location
                 obj.select_set(state=False)
@@ -730,7 +743,7 @@ _props = [
     ("bool", "b_cast_shadows", "Cast Shadows", "Cast and Receive Shadows" ),
     ("bool", "b_lightmaps", "Use Lightmaps as Occlusion (GlTF Settings)", "GLTF Models don\'t have lightmaps: turn on this option will save lightmaps to Ambient Occlusion in the GLTF models" ),
     ("float", "f_player_speed", "Player Speed", "Player Speed", 0.1 ),
-    ("float", "f_raycast_length", "Raycast Length","Raycast lenght to interact with objects", 20.0 ),
+    ("float", "f_raycast_length", "Raycast Length","Raycast lenght to interact with objects", 10.0 ),
     ("float", "f_raycast_interval", "Raycast Interval","Raycast Interval to interact with objects", 1500.0 ),
     ("str", "export_path", "Export To","Path to the folder containing the files to import", "C:/Temp/", 'FILE_PATH'),
     ("str", "s_project_name", "Name", "Project's name","aframe-prj"),
@@ -748,16 +761,41 @@ _props = [
     ("float", "f_lightMapIntensity", "LightMap Intensity","LightMap Intensity", 2.0),     
     ("str", "s_link", "Link Url", "Link Url" , "https://www.google.it/"),    
     ("str", "s_video", "Video File Name", "Video File Name" , "video.mp4"),        
+    ("str", "s_showhide_object", "Show Hide Object", "Show Hide Object: insert object id \ne.g. Cube.001" , "Cube.001"),    
+    ("str", "s_toggle_object", "Toggle Objects", 'Insert n id objects in JSON format e.g.\n{"1": "Cube.001", "2": "Cube.002"}, "3": "Cube.003"}' , '{"1": "Cube.001", "2": "Cube.002"}'),        
 ]
 
 # CUSTOM PROPERTY OPERATORS
+class ShowHideObject(bpy.types.Operator):
+    bl_idname = 'aframe.show_hide_object'
+    bl_label = 'Add Show Hide Object'
+    bl_description = 'Show and Hide object by clicking this entity'
+    def execute(self, context):
+        try:
+            scene = context.scene
+            bpy.context.active_object["AFRAME_SHOW_HIDE_OBJECT"] = scene.s_showhide_object
+        except Exception as e:
+            bpy.ops.wm.popuperror('INVOKE_DEFAULT', e = str(e))
+        return {'FINISHED'}
+    
+class ToogleObjects(bpy.types.Operator):
+    bl_idname = 'aframe.toggle_object'
+    bl_label = 'Add Toggle Object'
+    bl_description = 'Add two toggle objects for selected object'
+    def execute(self, context):
+        try:
+            bpy.context.active_object["AFRAME_TOOGLE_OBJECT"] = '{"1": "id1", "2": "id2"}'
+        except Exception as e:
+            bpy.ops.wm.popuperror('INVOKE_DEFAULT', e = str(e))
+        return {'FINISHED'}
+    
 class Images(bpy.types.Operator):
     bl_idname = 'aframe.images'
     bl_label = 'Add Toggle Images'
     bl_description = 'Add two toggle images for selected object'
     def execute(self, context):
         try:
-           bpy.context.active_object["AFRAME_IMAGES"] = '{"1": "image1.png", "2": "image2.png"}'
+            bpy.context.active_object["AFRAME_IMAGES"] = '{"1": "image1.png", "2": "image2.png"}'
         except Exception as e:
             bpy.ops.wm.popuperror('INVOKE_DEFAULT', e = str(e))
         return {'FINISHED'}
@@ -790,7 +828,8 @@ class LinkUrl(bpy.types.Operator):
     bl_description = 'Insert URL WEB'
     def execute(self, context):
         try:
-           bpy.context.active_object["AFRAME_HTTP_LINK"] = "http://www.google.com"
+            scene = context.scene
+            bpy.context.active_object["AFRAME_HTTP_LINK"] = scene.s_link
         except Exception as e:
             bpy.ops.wm.popuperror('INVOKE_DEFAULT', e = str(e))
         return {'FINISHED'}
@@ -801,7 +840,8 @@ class VideoPlay(bpy.types.Operator):
     bl_description = 'Insert Video'
     def execute(self, context):
         try:
-           bpy.context.active_object["AFRAME_VIDEO"] = "test.mp4"
+            scene = context.scene
+            bpy.context.active_object["AFRAME_VIDEO"] = scene.s_video
         except Exception as e:
             bpy.ops.wm.popuperror('INVOKE_DEFAULT', e = str(e))
         return {'FINISHED'}
@@ -836,7 +876,9 @@ def register():
     bpy.utils.register_class(LinkUrl)
     bpy.utils.register_class(VideoPlay)
     bpy.utils.register_class(Cubemap)
-    bpy.utils.register_class(Images)        
+    bpy.utils.register_class(Images)       
+    bpy.utils.register_class(ToogleObjects)       
+    bpy.utils.register_class(ShowHideObject)                   
     
     for p in _props:
         if p [ 0 ] == 'str': _reg_str ( scn, * p [ 1 : ] )
@@ -858,6 +900,8 @@ def unregister():
     bpy.utils.unregister_class(VideoPlay)
     bpy.utils.unregister_class(Cubemap)
     bpy.utils.unregister_class(Images)
+    bpy.utils.unregister_class(ToogleObjects)    
+    bpy.utils.unregister_class(ShowHideObject)      
 
     for p in _props:
         del bpy.types.Scene [ p [ 1 ] ]

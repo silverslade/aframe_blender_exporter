@@ -14,7 +14,8 @@ All notable changes to this project will be documented in this file.
 
 ## [0.0.7] work in progress
 
-- [NEW] add a link web text field
+- [NEW] AFRAME_HTTP_LINK: add a link web text field
+- [NEW] AFRAME_SHOW_HIDE_OBJECT: click to show or hide another 3d object
 
 ## [0.0.6] - 2020-08-01
 
