@@ -16,6 +16,9 @@ All notable changes to this project will be documented in this file.
 
 - [NEW] AFRAME_HTTP_LINK: add a link web text field
 - [NEW] AFRAME_SHOW_HIDE_OBJECT: click to show or hide another 3d object
+- [NEW] UI refactoring
+- [NEW] Added ThreeJS/Aframe Render settings: antialias, colorManagement, physicallyCorrectLights
+- [NEW] Integrated Bake Process thanks to [@anfeo](https://github.com/anfeo)
 
 ## [0.0.6] - 2020-08-01
 

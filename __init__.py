@@ -161,7 +161,7 @@ def default_template():
         <link rel="stylesheet" type="text/css" href="style.css">
     </head>
     <body onload="init();">
-        <a-scene ${stats} ${joystick} ${render_shadows}>
+        <a-scene ${stats} ${joystick} ${render_shadows} ${renderer}>
             <!-- Assets -->
             <a-assets>${asset}
                 <img id="sky"                 src="./resources/sky.jpg">
@@ -209,7 +209,7 @@ def default_template():
 
 class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_idname = "AFRAME_EXPORT_PT_Panel"
-    bl_label = "Aframe Exporter (v 0.0.7p1)"
+    bl_label = "Aframe Exporter (v 0.0.7p2)"
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -224,7 +224,8 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
         #row = col.row()
         #col.label(text="Exporter Settings", icon='NONE')
         row = layout.row(align=True)        
-        row.prop(scene, 'b_settings', text= "A-Frame", icon="TRIA_DOWN" if getattr(scene, 'b_settings') else "TRIA_RIGHT", icon_only=False, emboss=True)
+        row.prop(scene, 'b_settings', text= "", icon="TRIA_DOWN" if getattr(scene, 'b_settings') else "TRIA_RIGHT", icon_only=False, emboss=False)
+        row.label(text="A-Frame", icon='NONE')
         if scene.b_settings:
             row = layout.row(align=True)
             box = row.box()
@@ -243,7 +244,18 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.prop(scene, "b_cast_shadows")
             box.separator()
         row = layout.row(align=True) 
-        row.prop(scene, 'b_player', text= "Player", icon="TRIA_DOWN" if getattr(scene, 'b_player') else "TRIA_RIGHT", icon_only=False, emboss=True)
+        row.prop(scene, 'b_renderer', text= "", icon="TRIA_DOWN" if getattr(scene, 'b_renderer') else "TRIA_RIGHT", icon_only=False, emboss=False)
+        row.label(text="Renderer", icon='NONE')
+        if scene.b_renderer:     
+            row = layout.row(align=True)           
+            box = row.box()
+            box.prop(scene, "b_aa")
+            box.prop(scene, "b_colorManagement")       
+            box.prop(scene, "b_physicallyCorrectLights")                                    
+            box.separator()
+        row = layout.row(align=True)         
+        row.prop(scene, 'b_player', text= "", icon="TRIA_DOWN" if getattr(scene, 'b_player') else "TRIA_RIGHT", icon_only=False, emboss=False)
+        row.label(text="Player", icon='NONE')
         if scene.b_player:     
             row = layout.row(align=True)           
             box = row.box()
@@ -254,7 +266,8 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.prop(scene, "f_player_speed")
             box.separator()
         row = layout.row(align=True)      
-        row.prop(scene, 'b_interactive', text= "Interactive / Action", icon="TRIA_DOWN" if getattr(scene, 'b_interactive') else "TRIA_RIGHT", icon_only=False, emboss=True)
+        row.prop(scene, 'b_interactive', text= "", icon="TRIA_DOWN" if getattr(scene, 'b_interactive') else "TRIA_RIGHT", icon_only=False, emboss=False)
+        row.label(text="Interactive / Action", icon='NONE')
         if scene.b_interactive:     
             row = layout.row(align=True)           
             box = row.box()
@@ -280,11 +293,27 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             row.prop(scene, "s_video", text="")
         row = layout.row(align=True)      
 
-        row.prop(scene, 'b_bake', text= "Bake", icon="TRIA_DOWN" if getattr(scene, 'b_bake') else "TRIA_RIGHT", icon_only=False, emboss=True)
+        row.prop(scene, 'b_bake', text= "", icon="TRIA_DOWN" if getattr(scene, 'b_bake') else "TRIA_RIGHT", icon_only=False, emboss=False)
+        row.label(text="Bake", icon='NONE')
         if scene.b_bake:
             row = layout.row(align=True)   
             box = row.box()
             #box.separator()
+            box.operator('aframe.delete_lightmap', text='0 Delete All lightmaps')        
+            box.operator('aframe.prepare', text='1 Prepare Selection for Lightmapper')
+            box.operator('aframe.bake', text='2 Bake with Lightmapper')
+            box.operator('aframe.savelm', text='3 Save Lightmaps')   
+            box.operator('aframe.clean', text='4 Clean Lightmaps')            
+            #box.separator()         
+        row = layout.row(align=True) 
+
+        row.prop(scene, 'b_bake_lightmap', text= "", icon="TRIA_DOWN" if getattr(scene, 'b_bake_lightmap') else "TRIA_RIGHT", icon_only=False, emboss=False)
+        row.label(text="Create Lightmaps", icon='NONE')
+        if scene.b_bake_lightmap:
+            row = layout.row(align=True)   
+            box = row.box()
+            #box.separator()            
+            box.label(text="Enable github.com/Naxela/The_Lightmapper", icon='NONE')
             box.prop(scene, "b_use_lightmapper")
             box.prop(scene, "f_lightMapIntensity")
             box.operator('aframe.delete_lightmap', text='0 Delete All lightmaps')        
@@ -295,7 +324,8 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             #box.separator()         
         row = layout.row(align=True)  
         
-        row.prop(scene, 'b_export', text= "Exporter", icon="TRIA_DOWN" if getattr(scene, 'b_export') else "TRIA_RIGHT", icon_only=False, emboss=True)
+        row.prop(scene, 'b_export', text= "", icon="TRIA_DOWN" if getattr(scene, 'b_export') else "TRIA_RIGHT", icon_only=False, emboss=False)
+        row.label(text="Exporter", icon='NONE')
         if scene.b_export:
             row = layout.row(align=True)   
             box = row.box()            
@@ -698,6 +728,9 @@ class AframeExport_OT_Operator(bpy.types.Operator):
             light_directional_intensity = "1.0"
             light_ambient_intensity = "1.0"
 
+        #Renderer
+        showrenderer = 'renderer="antialias: '+str(scene.b_aa).lower()+'; colorManagement: '+str(scene.b_colorManagement).lower()+'; physicallyCorrectLights: '+str(scene.b_physicallyCorrectLights).lower()+';"'
+
         default_template()
         t = Template( bpy.data.texts['index.html'].as_string() )
         s = t.substitute(
@@ -714,7 +747,8 @@ class AframeExport_OT_Operator(bpy.types.Operator):
             sky=show_env_sky,
             directional_intensity=light_directional_intensity,
             ambient_intensity=light_ambient_intensity,
-            render_shadows=template_render_shadows)
+            render_shadows=template_render_shadows,
+            renderer=showrenderer)
 
 
         #print(s)
@@ -748,7 +782,7 @@ _props = [
     ("str", "export_path", "Export To","Path to the folder containing the files to import", "C:/Temp/", 'FILE_PATH'),
     ("str", "s_project_name", "Name", "Project's name","aframe-prj"),
     ("str", "s_output", "output","output export","output"),
-    ("bool", "b_use_lightmapper", "Bake with Lightmapper Add-on","Use Lightmapper for baking" ),
+    ("bool", "b_use_lightmapper", "Use Lightmapper Add-on","Use Lightmapper for baking" ),
     ("bool", "b_camera_cube", "Camera Cube Env","Enable Camera Cube Env component"),
     ("float", "f_player_height", "Player Height","Player Height", 1.7),
     ("bool", "b_raycast", "Enable Raycast","Enable Raycast"),
@@ -757,12 +791,17 @@ _props = [
     ("bool", "b_player", "Player settings","b_player"),    
     ("bool", "b_interactive", "Interactive","b_interactive"),        
     ("bool", "b_export", "Exporter settings","b_export"),    
-    ("bool", "b_bake", "Bake settings","b_bake"),     
+    ("bool", "b_bake", "Bake settings","b_bake"),         
+    ("bool", "b_bake_lightmap", "Bake settings","b_bake_lightmap"),     
     ("float", "f_lightMapIntensity", "LightMap Intensity","LightMap Intensity", 2.0),     
     ("str", "s_link", "Link Url", "Link Url" , "https://www.google.it/"),    
     ("str", "s_video", "Video File Name", "Video File Name" , "video.mp4"),        
     ("str", "s_showhide_object", "Show Hide Object", "Show Hide Object: insert object id \ne.g. Cube.001" , "Cube.001"),    
     ("str", "s_toggle_object", "Toggle Objects", 'Insert n id objects in JSON format e.g.\n{"1": "Cube.001", "2": "Cube.002"}, "3": "Cube.003"}' , '{"1": "Cube.001", "2": "Cube.002"}'),        
+    ("bool", "b_renderer", "Renderer Settings","A-Frame Renderer Settings"),
+    ("bool", "b_aa", "Antialiasing","Antialiasing"),    
+    ("bool", "b_colorManagement", "Color Management","ColorManagement"),        
+    ("bool", "b_physicallyCorrectLights", "Physically Correct Lights","PhysicallyCorrectLights"),         
 ]
 
 # CUSTOM PROPERTY OPERATORS
