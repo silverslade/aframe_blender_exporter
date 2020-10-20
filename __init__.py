@@ -602,7 +602,10 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                 gltf_model = 'gltf-model="#'+obj.name+'"' 
 
                 # export gltf
-                if obj.type == 'MESH':
+                print(obj.type)
+                if obj.type == 'MESH' or obj.type == 'EMPTY':
+                    if obj.type == 'EMPTY':
+                        gltf_model = ''
                     #print(obj.name,"custom properties:")
                     for K in obj.keys():
                         if K not in '_RNA_UI':
