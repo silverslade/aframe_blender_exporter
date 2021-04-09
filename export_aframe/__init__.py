@@ -132,8 +132,28 @@ class ExportAframe(object):
                 </a-entity>
 
                 <!-- Lights -->
-                <a-entity light="intensity: ${directional_intensity}; castShadow: ${cast_shadows}; shadowBias: -0.001; shadowCameraFar: 501.02; shadowCameraBottom: 12; shadowCameraFov: 101.79; shadowCameraNear: 0; shadowCameraTop: -5; shadowCameraRight: 10; shadowCameraLeft: -10; shadowRadius: 2" position="1.36586 7.17965 1"></a-entity>
-                <a-entity light="type: ambient; intensity: ${ambient_intensity}"></a-entity>
+                <a-entity
+                    light="
+                        intensity: ${directional_intensity};
+                        castShadow: ${cast_shadows};
+                        shadowBias: -0.001;
+                        shadowCameraFar: 501.02;
+                        shadowCameraBottom: 12;
+                        shadowCameraFov: 101.79;
+                        shadowCameraNear: 0;
+                        shadowCameraTop: -5;
+                        shadowCameraRight: 10;
+                        shadowCameraLeft: -10;
+                        shadowRadius: 2
+                    "
+                    position="1.4 7.2 1"
+                ></a-entity>
+                <a-entity
+                    light="
+                        type: ambient;
+                        intensity: ${ambient_intensity}
+                    "
+                ></a-entity>
 
                 <!-- Sky -->
                 ${sky}
