@@ -91,7 +91,7 @@ class ExportAframe(object):
         <body onload="init();">
             <a-scene ${stats} ${joystick} ${render_shadows} ${renderer}>
                 <!-- Assets -->
-                <a-assets>${asset}
+                <a-assets>
                     <img id="sky"                 src="./resources/sky.jpg">
                     <img id="icon-play"           src="./resources/play.png">
                     <img id="icon-pause"          src="./resources/pause.png">
@@ -99,10 +99,11 @@ class ExportAframe(object):
                     <img id="icon-mute"           src="./resources/mute.png">
                     <img id="icon-volume-low"     src="./resources/volume-low.png">
                     <img id="icon-volume-high"    src="./resources/volume-high.png">
+${asset}
                 </a-assets>
 
                 <!-- Entities -->
-                ${entity}
+${entity}
 
                 <!-- Camera -->
                 <a-entity id="player"
@@ -222,6 +223,7 @@ class ExportAframe(object):
         self, *, prop, obj, actualscale, actualposition, actualrotation
     ):
         # custom aframe code read from CUSTOM PROPERTIES
+        custom_attributes = []
         reflections = ""
         animation = ""
         link = ""
@@ -232,13 +234,12 @@ class ExportAframe(object):
         # print( "\n", K , "-" , obj[K], "\n" )
         if prop == "AFRAME_CUBEMAP" and self.scene.b_cubemap:
             if self.scene.b_camera_cube:
-                reflections = (
-                    ' geometry="" '
-                    + 'camera-cube-env="distance: 500; resolution: 512; '
-                    + 'repeat: true; interval: 400;" '
+                custom_attributes.append('geometry=""')
+                custom_attributes.append(
+                    'camera-cube-env="distance: 500; resolution: 512; repeat: true; interval: 400;"'
                 )
             else:
-                reflections = (
+                custom_attributes.append(
                     ' geometry="" cube-env-map="path: '
                     + self.scene.s_cubemap_path
                     + "; extension: "
@@ -246,10 +247,11 @@ class ExportAframe(object):
                     + '; reflectivity: 0.99;" '
                 )
         elif prop == "AFRAME_ANIMATION":
-            animation = ' animation= "' + obj[prop] + '" '
+            custom_attributes.append(' animation= "' + obj[prop] + '" ')
         elif prop == "AFRAME_HTTP_LINK":
-            # link = ' link="href: '+obj[K]+'" class="clickable" '
-            link = ' link-handler="target: ' + obj[prop] + '" class="clickable" '
+            # link = ' link="href: '+obj[K]+'"'
+            custom_attributes.append('link-handler="target:{}"'.format(obj[prop]))
+            custom_attributes.append('class="clickable"')
         elif prop == "AFRAME_VIDEO":
             # print("--------------- pos " + actualposition)
             # print("--------------- rot " + actualrotation)
@@ -359,22 +361,22 @@ class ExportAframe(object):
                 + '" visible="true" shadow="cast: false"></a-image>'
             )
         elif prop == "AFRAME_SHOW_HIDE_OBJECT":
-            toggle = ' toggle-handler="target: #' + obj[prop] + ';" class="clickable" '
+            custom_attributes.append('toggle-handler="target: #{};"'.format(obj[prop]))
+            custom_attributes.append('class="clickable"')
         elif prop.startswith("AFRAME_"):
             attr = prop.split("AFRAME_")[1].lower()
-            custom = custom + " " + attr + '="' + str(obj[prop]) + '"'
-        other_attributes = reflections + animation + link + custom + toggle
-        return video, image, other_attributes
+            custom_attributes.append(
+                '{attr}="{value}"'.format(attr=attr, value=obj[prop])
+            )
+        return video, image, custom_attributes
 
-    def handle_custom_properties(
-        self, *, obj, actualscale, actualposition, actualrotation
-    ):
+    def handle_object_mesh(self, *, obj, actualscale, actualposition, actualrotation):
         video = False
         image = False
-        other_attributes = ""
+        custom_attributes = []
         for prop in obj.keys():
             if prop not in "_RNA_UI":
-                video, image, other_attributes = self.handle_custom_propertie(
+                video, image, custom_attributes = self.handle_custom_propertie(
                     prop=prop,
                     obj=obj,
                     actualscale=actualscale,
@@ -405,12 +407,7 @@ class ExportAframe(object):
                     )
 
             # export as gltf
-            print(
-                "self.scene.export_apply_modifiers: {}".format(
-                    self.scene.export_apply_modifiers
-                )
-            )
-            print("obj", obj)
+            # print("obj", obj)
             filename = os.path.join(
                 self.base_path, constants.PATH_ASSETS, obj.name
             )  # + '.glft' )
@@ -422,31 +419,48 @@ class ExportAframe(object):
                 export_apply=True,
                 # export_apply=self.scene.export_apply_modifiers,
             )
+            # single line format
             self.assets.append(
-                '\n\t\t\t\t<a-asset-item id="'
-                + obj.name
-                + '" src="./assets/'
-                + obj.name
-                + ".gltf"
-                + '"></a-asset-item>'
+                "                <a-asset-item "
+                'id="{obj_name}"'
+                'src="./assets/{obj_name}.gltf" '
+                "></a-asset-item>\n"
+                "".format(obj_name=obj.name)
             )
+            # multiline format
+            # self.assets.append(
+            #     "                <a-asset-item \n"
+            #     '                    id="{obj_name}"\n'
+            #     '                    src="./assets/{obj_name}.gltf"\n'
+            #     "                ></a-asset-item>\n"
+            #     "".format(obj_name=obj.name)
+            # )
             if self.scene.b_cast_shadows:
                 shadow_cast = "true"
             else:
                 shadow_cast = "false"
+
+            custom_attributes_text = ""
+            for item in custom_attributes:
+                custom_attributes_text += "                    {}\n".format(item)
             self.entities.append(
-                '\n\t\t\t<a-entity id="#'
-                + obj.name
-                + '" '
-                + baked
-                + ' gltf-model="#'
-                + obj.name
-                + '" scale="1 1 1" position="'
-                + actualposition
-                + '" visible="true" '
-                + 'shadow="cast: {}" '.format(shadow_cast)
-                + other_attributes
-                + "></a-entity>"
+                "                <a-entity \n"
+                '                    id="#{obj_name}"\n'
+                "                    {baked} \n"
+                '                    gltf-model="#{obj_name}"\n'
+                '                    shadow="cast: {shadow_cast}" \n'
+                '                    scale="1 1 1"\n'
+                '                    position="{position}"\n'
+                '                    visible="true"\n'
+                "{other_attributes}"
+                "                ></a-entity>\n"
+                "".format(
+                    obj_name=obj.name,
+                    baked=baked,
+                    position=actualposition,
+                    shadow_cast=shadow_cast,
+                    other_attributes=custom_attributes_text,
+                )
             )
 
     def export_object(self, obj):
@@ -521,7 +535,7 @@ class ExportAframe(object):
         # export gltf
         if obj.type == "MESH":
             # print(obj.name,"custom properties:")
-            self.handle_custom_properties(
+            self.handle_object_mesh(
                 obj=obj,
                 actualscale=actualscale,
                 actualposition=actualposition,

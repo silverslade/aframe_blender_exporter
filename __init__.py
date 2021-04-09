@@ -228,6 +228,10 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             row.prop(scene, "s_link", text="")
 
             row = box.column_flow(columns=2, align=False)
+            row.operator("aframe.onclick")
+            row.prop(scene, "s_eventhandler", text="")
+
+            row = box.column_flow(columns=2, align=False)
             row.operator("aframe.videoplay")
             row.prop(scene, "s_video", text="")
         row = layout.row(align=True)
@@ -585,6 +589,13 @@ _props = [
     ("bool", "b_bake_lightmap", "Bake settings", "b_bake_lightmap"),
     ("float", "f_lightMapIntensity", "LightMap Intensity", "LightMap Intensity", 2.0),
     ("str", "s_link", "Link Url", "Link Url", "https://www.google.it/"),
+    (
+        "str",
+        "s_eventhandler",
+        "js event handler",
+        "js event handler",
+        "console.log('event', event)",
+    ),
     ("str", "s_video", "Video File Name", "Video File Name", "video.mp4"),
     (
         "str",
@@ -702,6 +713,20 @@ class LinkUrl(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class Onclick(bpy.types.Operator):
+    bl_idname = "aframe.onclick"
+    bl_label = "Add OnClick event"
+    bl_description = "Insert onclick event handling"
+
+    def execute(self, context):
+        try:
+            scene = context.scene
+            bpy.context.active_object["AFRAME_ONCLICK"] = scene.s_eventhandler
+        except Exception as e:
+            bpy.ops.wm.popuperror("INVOKE_DEFAULT", e=str(e))
+        return {"FINISHED"}
+
+
 class VideoPlay(bpy.types.Operator):
     bl_idname = "aframe.videoplay"
     bl_label = "Add Video"
@@ -763,6 +788,7 @@ def register():
     bpy.utils.register_class(AframeClearAsset_OT_Operator)
     bpy.utils.register_class(Rotation360)
     bpy.utils.register_class(LinkUrl)
+    bpy.utils.register_class(Onclick)
     bpy.utils.register_class(VideoPlay)
     bpy.utils.register_class(Cubemap)
     bpy.utils.register_class(Images)
@@ -796,6 +822,7 @@ def unregister():
     bpy.utils.unregister_class(AframeClearAsset_OT_Operator)
     bpy.utils.unregister_class(Rotation360)
     bpy.utils.unregister_class(LinkUrl)
+    bpy.utils.unregister_class(Onclick)
     bpy.utils.unregister_class(VideoPlay)
     bpy.utils.unregister_class(Cubemap)
     bpy.utils.unregister_class(Images)
