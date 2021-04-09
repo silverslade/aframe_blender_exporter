@@ -25,26 +25,25 @@ class ExportAframe(object):
     """Export Scene to A-Frame Website."""
 
     def __init__(
-        self, *, skiphidden=True, report=None  # this forces named_properties..
+        self, *, scene, report=None,  # this * notation forces named_properties..
     ):
         """Init."""
         super(ExportAframe, self).__init__()
-        self.config = {
-            "filename": None,
-            "skiphidden": skiphidden,
-            "report": self.print_report,
-        }
+        # self.config = {
+        #     "filename": None,
+        #     "skiphidden": skiphidden,
+        #     "report": self.print_report,
+        # }
+        # print("config", self.config)
 
         self.report = report
-
-        print("config", self.config)
+        self.scene = scene
 
         self.assets = []
         self.entities = []
         self.lights = []
         self.showstats = ""
 
-        self.scene = None
         self.script_file = None
         self.script_directory = None
         self.lightmap_files = None
@@ -200,7 +199,7 @@ class ExportAframe(object):
                     )
 
     def handle_custom_propertie(
-        self, *, K, obj, actualscale, actualposition, actualrotation
+        self, *, prop, obj, actualscale, actualposition, actualrotation
     ):
         # custom aframe code read from CUSTOM PROPERTIES
         reflections = ""
@@ -211,7 +210,7 @@ class ExportAframe(object):
         video = False
         image = False
         # print( "\n", K , "-" , obj[K], "\n" )
-        if K == "AFRAME_CUBEMAP" and self.scene.b_cubemap:
+        if prop == "AFRAME_CUBEMAP" and self.scene.b_cubemap:
             if self.scene.b_camera_cube:
                 reflections = (
                     ' geometry="" '
@@ -226,12 +225,12 @@ class ExportAframe(object):
                     + self.scene.s_cubemap_ext
                     + '; reflectivity: 0.99;" '
                 )
-        elif K == "AFRAME_ANIMATION":
-            animation = ' animation= "' + obj[K] + '" '
-        elif K == "AFRAME_HTTP_LINK":
+        elif prop == "AFRAME_ANIMATION":
+            animation = ' animation= "' + obj[prop] + '" '
+        elif prop == "AFRAME_HTTP_LINK":
             # link = ' link="href: '+obj[K]+'" class="clickable" '
-            link = ' link-handler="target: ' + obj[K] + '" class="clickable" '
-        elif K == "AFRAME_VIDEO":
+            link = ' link-handler="target: ' + obj[prop] + '" class="clickable" '
+        elif prop == "AFRAME_VIDEO":
             # print("--------------- pos " + actualposition)
             # print("--------------- rot " + actualrotation)
             # print("--------------- scale " + actualscale)
@@ -255,7 +254,7 @@ class ExportAframe(object):
                 '\n\t\t\t\t<video id="video_'
                 + str(self.videocount)
                 + '" loop="true" autoplay="true" src="./media/'
-                + obj[K]
+                + obj[prop]
                 + '"></video>'
             )
             self.entities.append(
@@ -309,13 +308,13 @@ class ExportAframe(object):
             # )
             video = True
             self.videocount = self.videocount + 1
-        elif K == "AFRAME_IMAGES":
+        elif prop == "AFRAME_IMAGES":
             # print(".....images")
             image = True
             self.imagecount = self.imagecount + 1
-            # load K
+            # load prop
             # json_images = '{"1": "image1.jpg", "2": "image2.jpg"}'
-            json_images = obj[K]
+            json_images = obj[prop]
             json_dictionary = json.loads(json_images)
             for key in json_dictionary:
                 # print(key, ":", json_dictionary[key])
@@ -339,21 +338,28 @@ class ExportAframe(object):
                 + actualrotation
                 + '" visible="true" shadow="cast: false"></a-image>'
             )
-        elif K == "AFRAME_SHOW_HIDE_OBJECT":
-            toggle = ' toggle-handler="target: #' + obj[K] + ';" class="clickable" '
-        elif K.startswith("AFRAME_"):
-            attr = K.split("AFRAME_")[1].lower()
-            custom = custom + " " + attr + '="' + str(obj[K]) + '"'
+        elif prop == "AFRAME_SHOW_HIDE_OBJECT":
+            toggle = ' toggle-handler="target: #' + obj[prop] + ';" class="clickable" '
+        elif prop.startswith("AFRAME_"):
+            attr = prop.split("AFRAME_")[1].lower()
+            custom = custom + " " + attr + '="' + str(obj[prop]) + '"'
         other_attributes = reflections + animation + link + custom + toggle
         return video, image, other_attributes
 
     def handle_custom_properties(
         self, *, obj, actualscale, actualposition, actualrotation
     ):
-        for K in obj.keys():
-            if K not in "_RNA_UI":
+        video = False
+        image = False
+        other_attributes = ""
+        for prop in obj.keys():
+            if prop not in "_RNA_UI":
                 video, image, other_attributes = self.handle_custom_propertie(
-                    K, obj, actualscale, actualposition, actualrotation
+                    prop=prop,
+                    obj=obj,
+                    actualscale=actualscale,
+                    actualposition=actualposition,
+                    actualrotation=actualrotation,
                 )
 
         if video is False and image is False:
@@ -411,7 +417,7 @@ class ExportAframe(object):
                 + "></a-entity>"
             )
 
-    def export_object(self, obj, scalefactor):
+    def export_object(self, obj):
         print("[AFRAME EXPORTER] loop object " + obj.name)
         bpy.ops.object.select_all(action="DESELECT")
         obj.select_set(state=True)
@@ -426,11 +432,11 @@ class ExportAframe(object):
             str(location.x) + " " + str(location.z) + " " + str(-location.y)
         )
         actualscale = (
-            str(scalefactor * bpy.data.objects[obj.name].scale.x)
+            str(self.scalefactor * bpy.data.objects[obj.name].scale.x)
             + " "
-            + str(scalefactor * bpy.data.objects[obj.name].scale.y)
+            + str(self.scalefactor * bpy.data.objects[obj.name].scale.y)
             + " "
-            + str(scalefactor * bpy.data.objects[obj.name].scale.z)
+            + str(self.scalefactor * bpy.data.objects[obj.name].scale.z)
         )
         # pi = 22.0/7.0
         # actualrotation = (
@@ -484,7 +490,10 @@ class ExportAframe(object):
         if obj.type == "MESH":
             # print(obj.name,"custom properties:")
             self.handle_custom_properties(
-                obj, actualscale, actualposition, actualrotation
+                obj=obj,
+                actualscale=actualscale,
+                actualposition=actualposition,
+                actualrotation=actualrotation,
             )
         # deselect object
         obj.location = location
@@ -627,28 +636,30 @@ class ExportAframe(object):
     # ##########################################
     # main
 
-    def export(self, content):
+    def export(self):
         print("[AFRAME EXPORTER] Exporting project...")
 
         self.assets = []
         self.entities = []
         self.lights = []
 
-        self.scene = content.scene
         self.scene.s_output = "exporting..."
         self.script_file = os.path.realpath(__file__)
         # print("self.script_file dir = "+self.script_file)
         self.script_directory = os.path.dirname(self.script_file)
+        self.script_directory = os.path.join(self.script_directory, "../")
+        self.script_directory = os.path.normpath(self.script_directory)
 
         # Destination base path
         self.base_path = os.path.join(self.scene.export_path, self.scene.s_project_name)
 
         if __name__ == "__main__":
-            # print("inside blend file")
+            print("inside blend file")
             # print(os.path.dirname(self.script_directory))
             self.script_directory = os.path.dirname(self.script_directory)
 
-        print("[AFRAME EXPORTER] Target Dir = " + self.script_directory)
+        print("[AFRAME EXPORTER] resources sourec path = " + self.script_directory)
+        print("[AFRAME EXPORTER] Target Dir = " + self.base_path)
 
         self.create_diretories()
 
