@@ -384,11 +384,23 @@ class ExportAframe(object):
                         + '"'
                     )
 
+            # export as gltf
+            print(
+                "self.scene.export_apply_modifiers: {}".format(
+                    self.scene.export_apply_modifiers
+                )
+            )
+            print("obj", obj)
             filename = os.path.join(
                 self.base_path, constants.PATH_ASSETS, obj.name
             )  # + '.glft' )
+            print("filename", filename)
             bpy.ops.export_scene.gltf(
-                filepath=filename, export_format="GLTF_EMBEDDED", use_selection=True,
+                filepath=filename,
+                export_format="GLTF_EMBEDDED",
+                use_selection=True,
+                export_apply=True,
+                # export_apply=self.scene.export_apply_modifiers,
             )
             self.assets.append(
                 '\n\t\t\t\t<a-asset-item id="'
@@ -637,6 +649,7 @@ class ExportAframe(object):
     # main
 
     def export(self):
+        print("\n\n\n")
         print("[AFRAME EXPORTER] Exporting project...")
 
         self.assets = []
@@ -658,8 +671,8 @@ class ExportAframe(object):
             # print(os.path.dirname(self.script_directory))
             self.script_directory = os.path.dirname(self.script_directory)
 
-        print("[AFRAME EXPORTER] resources sourec path = " + self.script_directory)
-        print("[AFRAME EXPORTER] Target Dir = " + self.base_path)
+        print("[AFRAME EXPORTER] ressources path = " + self.script_directory)
+        print("[AFRAME EXPORTER] target path     = " + self.base_path)
 
         self.create_diretories()
 
