@@ -598,9 +598,14 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                 toggle = ""
                 video = False
                 image = False
+                tag = "entity"
+                gltf_model = 'gltf-model="#'+obj.name+'"' 
 
                 # export gltf
-                if obj.type == 'MESH':
+                print(obj.type)
+                if obj.type == 'MESH' or obj.type == 'EMPTY':
+                    if obj.type == 'EMPTY':
+                        gltf_model = ''
                     #print(obj.name,"custom properties:")
                     for K in obj.keys():
                         if K not in '_RNA_UI':
@@ -642,6 +647,10 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                                 entities.append('\n\t\t\t<a-image images-handler id="#i_'+str(imagecount)+'" src="#image_'+key+'" class="clickable" width="1" height="1" scale="'+actualscale+'" position="'+actualposition+'" rotation="'+actualrotation+'" visible="true" shadow="cast: false"></a-image>')
                             elif K == "AFRAME_SHOW_HIDE_OBJECT":
                                 toggle = ' toggle-handler="target: #'+obj[K]+';" class="clickable" '
+                            elif K == "AFRAME_TAG":
+                                tag = obj[K]
+                            elif K == "AFRAME_NOGLTF":
+                                gltf_model = ""
                             elif K.startswith('AFRAME_'):
                                 attr   = K.split("AFRAME_")[1].lower()
                                 custom = custom+' '+attr+'="'+str(obj[K])+'"'
@@ -663,9 +672,9 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                         bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True)
                         assets.append('\n\t\t\t\t<a-asset-item id="'+obj.name+'" src="./assets/'+obj.name + '.gltf'+'"></a-asset-item>')
                         if scene.b_cast_shadows:
-                            entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" gltf-model="#'+obj.name+'" scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: true" '+reflections+animation+link+custom+toggle+'></a-entity>')
+                            entities.append('\n\t\t\t<a-'+tag+' id="#'+obj.name+'" '+gltf_model+' scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: true" '+reflections+animation+link+custom+toggle+'></a-'+tag+'>')
                         else:
-                            entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" '+baked+' gltf-model="#'+obj.name+'" scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: false" '+reflections+animation+link+custom+toggle+'></a-entity>')
+                            entities.append('\n\t\t\t<a-'+tag+' id="#'+obj.name+'" '+gltf_model+' '+baked+' scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: false" '+reflections+animation+link+custom+toggle+'></a-'+tag+'>')
                 # deselect object
                 obj.location = location
                 obj.select_set(state=False)
