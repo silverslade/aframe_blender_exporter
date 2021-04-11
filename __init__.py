@@ -444,6 +444,9 @@ class AframeSavelm_OT_Operator(bpy.types.Operator):
     def execute(self, content):
         images = bpy.data.images
         scene = content.scene
+        original_format = scene.render.image_settings.file_format
+        settings = scene.render.image_settings
+        settings.file_format = 'PNG'
         DEST_RES = os.path.join ( scene.export_path, scene.s_project_name )
         for img in images:
             if "_baked" in img.name and img.has_data:
@@ -454,6 +457,7 @@ class AframeSavelm_OT_Operator(bpy.types.Operator):
                 img.file_format = 'PNG'
                 img.save_render(os.path.join ( DEST_RES, PATH_LIGHTMAPS, img.name+ext ) )
                 print("[SAVE LIGHTMAPS] Save image "+img.name)
+        settings.file_format = original_format
         return {'FINISHED'}
     
 class AframeLoadlm_OT_Operator(bpy.types.Operator):
