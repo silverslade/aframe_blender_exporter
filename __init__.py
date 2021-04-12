@@ -829,8 +829,10 @@ def unregister():
     bpy.utils.unregister_class(ToogleObjects)
     bpy.utils.unregister_class(ShowHideObject)
 
-    for p in _props:
-        del bpy.types.Scene[p[1]]
+    # for p in _props:
+    #     print(" p", p)
+    #     print(" bpy.types.Scene[p[1]]", bpy.types.Scene[p[1]])
+    #     del bpy.types.Scene[p[1]]
 
     # deletes intex.html template embeded file
     for t in bpy.data.texts:

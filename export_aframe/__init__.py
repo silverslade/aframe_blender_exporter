@@ -252,6 +252,9 @@ ${entity}
             # link = ' link="href: '+obj[K]+'"'
             custom_attributes.append('link-handler="target:{}"'.format(obj[prop]))
             custom_attributes.append('class="clickable"')
+        elif prop == "AFRAME_ONCLICK":
+            custom_attributes.append('onclick="{}"'.format(obj[prop]))
+            custom_attributes.append('class="clickable"')
         elif prop == "AFRAME_VIDEO":
             # print("--------------- pos " + actualposition)
             # print("--------------- rot " + actualrotation)
@@ -376,13 +379,15 @@ ${entity}
         custom_attributes = []
         for prop in obj.keys():
             if prop not in "_RNA_UI":
-                video, image, custom_attributes = self.handle_custom_propertie(
+                prop_custom_attributes = []
+                video, image, prop_custom_attributes = self.handle_custom_propertie(
                     prop=prop,
                     obj=obj,
                     actualscale=actualscale,
                     actualposition=actualposition,
                     actualrotation=actualrotation,
                 )
+                custom_attributes.extend(prop_custom_attributes)
 
         if video is False and image is False:
             baked = ""
@@ -441,8 +446,10 @@ ${entity}
                 shadow_cast = "false"
 
             custom_attributes_text = ""
+            print("custom_attributes:\n", "\n  ".join(custom_attributes))
             for item in custom_attributes:
                 custom_attributes_text += "                    {}\n".format(item)
+            # print("custom_attributes_text", custom_attributes_text)
             self.entities.append(
                 "                <a-entity \n"
                 '                    id="#{obj_name}"\n'
