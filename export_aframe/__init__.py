@@ -44,6 +44,7 @@ class ExportAframe(object):
         self.lights = []
         self.showstats = ""
 
+        self.exported_meshes = []
         self.script_file = None
         self.script_directory = None
         self.lightmap_files = None
@@ -411,35 +412,51 @@ ${entity}
                         + '"'
                     )
 
-            # export as gltf
-            # print("obj", obj)
-            filename = os.path.join(
-                self.base_path, constants.PATH_ASSETS, obj.name
-            )  # + '.glft' )
-            print("filename", filename)
-            bpy.ops.export_scene.gltf(
-                filepath=filename,
-                export_format="GLTF_EMBEDDED",
-                use_selection=True,
-                export_apply=True,
-                # export_apply=self.scene.export_apply_modifiers,
-            )
-            # single line format
-            self.assets.append(
-                "                <a-asset-item "
-                'id="{obj_name}"'
-                'src="./assets/{obj_name}.gltf" '
-                "></a-asset-item>\n"
-                "".format(obj_name=obj.name)
-            )
-            # multiline format
-            # self.assets.append(
-            #     "                <a-asset-item \n"
-            #     '                    id="{obj_name}"\n'
-            #     '                    src="./assets/{obj_name}.gltf"\n'
-            #     "                ></a-asset-item>\n"
-            #     "".format(obj_name=obj.name)
-            # )
+            mesh_name = obj.data.name
+            # check if we have exported this mesh already...
+            print("  self.exported_meshes", self.exported_meshes)
+            print("  mesh_name", mesh_name)
+            if mesh_name not in self.exported_meshes:
+                # export as gltf
+                # print("obj", obj)
+                filename = os.path.join(
+                    self.base_path, constants.PATH_ASSETS, mesh_name
+                )  # + '.glft' )
+                print("  filename", filename)
+                location = obj.location.copy()
+                rotation = obj.rotation_euler.copy()
+                bpy.ops.object.location_clear()
+                bpy.ops.object.rotation_clear()
+
+                bpy.ops.export_scene.gltf(
+                    filepath=filename,
+                    export_format="GLTF_EMBEDDED",
+                    use_selection=True,
+                    # export_apply=True,
+                    export_apply=self.scene.export_apply_modifiers,
+                )
+
+                obj.location = location
+                obj.rotation_euler = rotation
+                self.exported_meshes.append(mesh_name)
+
+                # single line format
+                self.assets.append(
+                    "                <a-asset-item "
+                    'id="{mesh_name}" '
+                    'src="./assets/{mesh_name}.gltf" '
+                    "></a-asset-item>\n"
+                    "".format(mesh_name=mesh_name)
+                )
+                # multiline format
+                # self.assets.append(
+                #     "                <a-asset-item \n"
+                #     '                    id="{obj_name}"\n'
+                #     '                    src="./assets/{obj_name}.gltf"\n'
+                #     "                ></a-asset-item>\n"
+                #     "".format(obj_name=obj.name)
+                # )
+
             if self.scene.b_cast_shadows:
                 shadow_cast = "true"
             else:
@@ -454,33 +471,42 @@ ${entity}
                 "                <a-entity \n"
                 '                    id="#{obj_name}"\n'
                 "                    {baked} \n"
-                '                    gltf-model="#{obj_name}"\n'
+                '                    gltf-model="#{mesh_name}"\n'
                 '                    shadow="cast: {shadow_cast}" \n'
                 '                    scale="1 1 1"\n'
                 '                    position="{position}"\n'
+                '                    rotation="{rotation}"\n'
                 '                    visible="true"\n'
                 "{other_attributes}"
                 "                ></a-entity>\n"
                 "".format(
                     obj_name=obj.name,
+                    mesh_name=mesh_name,
                     baked=baked,
                     position=actualposition,
+                    rotation=actualrotation,
                     shadow_cast=shadow_cast,
                     other_attributes=custom_attributes_text,
                 )
             )
 
+    # def search_object_mesh(obj):
+    #     pass
+
     def export_object(self, obj):
         print("[AFRAME EXPORTER] loop object " + obj.name)
+
+        # check for duplicate exports
+        mesh_name = obj.data.name
+
         bpy.ops.object.select_all(action="DESELECT")
         obj.select_set(state=True)
         bpy.context.view_layer.objects.active = obj
         # bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
-        bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
+        # bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
         location = obj.location.copy()
         rotation = obj.rotation_euler.copy()
 
-        bpy.ops.object.location_clear()
         actualposition = (
             str(location.x) + " " + str(location.z) + " " + str(-location.y)
         )
@@ -539,6 +565,10 @@ ${entity}
         # )
         actualrotation = "0 " + str(math.degrees(rotation.z)) + " 0"
 
+        print("  actualposition", actualposition)
+        print("  actualrotation", actualrotation)
+        print("  actualscale", actualscale)
+
         # export gltf
         if obj.type == "MESH":
             # print(obj.name,"custom properties:")
@@ -549,7 +579,6 @@ ${entity}
                 actualrotation=actualrotation,
             )
         # deselect object
-        obj.location = location
         obj.select_set(state=False)
 
     def export_objects(self):
@@ -696,6 +725,7 @@ ${entity}
         self.assets = []
         self.entities = []
         self.lights = []
+        self.exported_meshes = []
 
         self.scene.s_output = "exporting..."
         self.script_file = os.path.realpath(__file__)
