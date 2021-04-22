@@ -222,7 +222,7 @@ ${entity}
 
     ###
     def prepare_entity_str(self, entity_attributes):
-        print("prepare_entity_str")
+        # print("prepare_entity_str")
         if not any(item.startswith("id") for item in entity_attributes):
             # only add if no other attribute for shadow is there..
             entity_attributes.append('id="#{obj_name}"')
@@ -256,7 +256,7 @@ ${entity}
         filename = None
         mesh_name = obj.data.name
         # check if we have exported this mesh already...
-        print("  self.exported_meshes", self.exported_meshes)
+        # print("  self.exported_meshes", self.exported_meshes)
         print("  mesh_name", mesh_name)
         if mesh_name not in self.exported_meshes:
             # export as gltf
@@ -518,14 +518,14 @@ ${entity}
         #         -90 + math.degrees(bpy.data.objects[obj.name].rotation_euler.z)
         #     )
         # )
-        # actualrotation = (
-        #     str(math.degrees(rotation.x))
-        #     + " "
-        #     + str(math.degrees(rotation.z))
-        #     + " "
-        #     + str(math.degrees(-rotation.y))
-        # )
-        actualrotation = "0 " + str(math.degrees(rotation.z)) + " 0"
+        actualrotation = (
+            str(math.degrees(rotation.x))
+            + " "
+            + str(math.degrees(rotation.z))
+            + " "
+            + str(math.degrees(-rotation.y))
+        )
+        # actualrotation = "0 " + str(math.degrees(rotation.z)) + " 0"
 
         print("  actualposition", actualposition)
         print("  actualrotation", actualrotation)
