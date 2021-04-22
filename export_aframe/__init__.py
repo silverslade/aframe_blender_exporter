@@ -234,7 +234,7 @@ ${entity}
             entity_attributes.append('shadow="cast: {shadow_cast}"')
         entity_attributes.append('visible="true"')
 
-        print("entity_attributes:", "\n".join(entity_attributes))
+        # print("entity_attributes:", "\n".join(entity_attributes))
 
         # prepare entity lines
         entity_lines = []
@@ -416,7 +416,6 @@ ${entity}
         if not any(item.contains(("image", "video")) for item in entity_attributes):
             #####################
             # handle lightmap things
-            baked = ""
             # check if baked texture is present on filesystem
             # images = bpy.data.images
             # for img in images:
@@ -448,7 +447,6 @@ ${entity}
         entity_str = entity_str.format(
             obj_name=obj.name,
             mesh_name=mesh_name,
-            baked=baked,
             position=actualposition,
             rotation=actualrotation,
             scale="1 1 1",
