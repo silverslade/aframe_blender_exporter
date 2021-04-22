@@ -266,9 +266,13 @@ ${entity}
             )  # + '.glft' )
             print("  filename", filename)
             location = obj.location.copy()
-            rotation = obj.rotation_euler.copy()
+            rotation_euler = obj.rotation_euler.copy()
+            # print("  obj.location", obj.location)
+            # print("  obj.rotation_euler", obj.rotation_euler)
             bpy.ops.object.location_clear()
             bpy.ops.object.rotation_clear()
+            # print("  obj.location", obj.location)
+            # print("  obj.rotation_euler", obj.rotation_euler)
 
             bpy.ops.export_scene.gltf(
                 filepath=filename,
@@ -279,7 +283,12 @@ ${entity}
             )
 
             obj.location = location
-            obj.rotation_euler = rotation
+            obj.rotation_euler = rotation_euler
+            # print("  location", location)
+            # print("  rotation_euler", rotation_euler)
+            # print("  obj.location", obj.location)
+            # print("  obj.rotation_euler", obj.rotation_euler)
+
             self.exported_meshes.append(mesh_name)
 
             # single line format
@@ -413,7 +422,7 @@ ${entity}
 
         # prepare export
         mesh_name = ""
-        if not any(item.contains(("image", "video")) for item in entity_attributes):
+        if not any(item.startswith(("image", "video")) for item in entity_attributes):
             #####################
             # handle lightmap things
             # check if baked texture is present on filesystem
