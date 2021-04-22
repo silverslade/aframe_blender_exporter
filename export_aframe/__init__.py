@@ -36,7 +36,7 @@ class ExportAframe(object):
         # }
         # print("config", self.config)
 
-        self.report = report
+        self.report_obj = report
         self.scene = scene
 
         self.assets = []
@@ -56,10 +56,10 @@ class ExportAframe(object):
 
         self.scalefactor = 2
 
-    def print_report(self, mode, data, pre_line=""):
+    def report(self, mode, data, pre_line=""):
         """Multi print handling."""
         b_helper.print_multi(
-            mode=mode, data=data, pre_line=pre_line, report=self.report,
+            mode=mode, data=data, pre_line=pre_line, report=self.report_obj,
         )
 
     def create_default_template(self):
@@ -220,18 +220,143 @@ ${entity}
                         os.path.join(self.base_path, dest_path, fname),
                     )
 
+    ###
+    def prepare_entity_str(self, entity_attributes):
+        print("prepare_entity_str")
+        if not any(item.startswith("id") for item in entity_attributes):
+            # only add if no other attribute for shadow is there..
+            entity_attributes.append('id="#{obj_name}"')
+        entity_attributes.append('position="{position}"')
+        entity_attributes.append('rotation="{rotation}"')
+        entity_attributes.append('scale="{scale}"')
+        if not any(item.startswith("shadow") for item in entity_attributes):
+            # only add if no other attribute for shadow is there..
+            entity_attributes.append('shadow="cast: {shadow_cast}"')
+        entity_attributes.append('visible="true"')
+
+        print("entity_attributes:", "\n".join(entity_attributes))
+
+        # prepare entity lines
+        entity_lines = []
+        entity_preline_sub = "    "
+        entity_lines.append("<a-entity ")
+        for item in entity_attributes:
+            entity_lines.append("{}{}".format(entity_preline_sub, item))
+        entity_lines.append("></a-entity>")
+
+        # build entity string
+        entity_preline_base = "                "
+        entity_str = ""
+        for item in entity_lines:
+            entity_str += "{}{}\n".format(entity_preline_base, item)
+
+        return entity_str
+
+    def get_or_export_mesh(self, obj):
+        filename = None
+        mesh_name = obj.data.name
+        # check if we have exported this mesh already...
+        print("  self.exported_meshes", self.exported_meshes)
+        print("  mesh_name", mesh_name)
+        if mesh_name not in self.exported_meshes:
+            # export as gltf
+            # print("obj", obj)
+            filename = os.path.join(
+                self.base_path, constants.PATH_ASSETS, mesh_name
+            )  # + '.glft' )
+            print("  filename", filename)
+            location = obj.location.copy()
+            rotation = obj.rotation_euler.copy()
+            bpy.ops.object.location_clear()
+            bpy.ops.object.rotation_clear()
+
+            bpy.ops.export_scene.gltf(
+                filepath=filename,
+                export_format="GLTF_EMBEDDED",
+                use_selection=True,
+                # export_apply=True,
+                export_apply=self.scene.export_apply_modifiers,
+            )
+
+            obj.location = location
+            obj.rotation_euler = rotation
+            self.exported_meshes.append(mesh_name)
+
+            # single line format
+            self.assets.append(
+                "                <a-asset-item "
+                'id="{mesh_name}" '
+                'src="./assets/{mesh_name}.gltf" '
+                "></a-asset-item>\n"
+                "".format(mesh_name=mesh_name)
+            )
+            # multiline format
+            # self.assets.append(
+            #     "                <a-asset-item \n"
+            #     '                    id="{obj_name}"\n'
+            #     '                    src="./assets/{obj_name}.gltf"\n'
+            #     "                ></a-asset-item>\n"
+            #     "".format(obj_name=obj.name)
+            # )
+        return mesh_name
+
+    def handle_propertie_video(self, *, prop, obj):
+        attributes = []
+        video_src_id = "video_src_{}".format(self.videocount)
+        video_el_id = "video_{}".format(self.videocount)
+        self.assets.append(
+            "\n\t\t\t\t<video "
+            + 'id="{}" src="./media/{}"'.format(video_src_id, obj[prop])
+            + 'loop="true" autoplay="true" '
+            + "></video>"
+        )
+        attributes.append("video")
+        attributes.append('id="#{}"'.format(video_el_id))
+        attributes.append('src="#{}"'.format(video_src_id))
+        attributes.append('width="1"')
+        attributes.append('height="1"')
+        attributes.append('shadow="cast: false"')
+        # attributes.append('material="src:{}"'.format(video_src_id))
+        self.videocount = self.videocount + 1
+        return attributes
+
+    def handle_propertie_image(self, *, prop, obj):
+        attributes = []
+        # load prop
+        # json_images = '{"1": "image1.jpg", "2": "image2.jpg"}'
+        json_images = obj[prop]
+        json_dictionary = json.loads(json_images)
+        image_src_list = []
+        for key in json_dictionary:
+            # print(key, ":", json_dictionary[key])
+            image_src_id = "image_src_{}_{}".format(self.imagecount, key)
+            self.assets.append(
+                '\n\t\t\t\t<img id="{}" src="./media/{}"></img>'.format(
+                    image_src_id, json_dictionary[key]
+                )
+            )
+            image_src_list.append(image_src_id)
+
+        image_el_id = "image_{}".format(self.imagecount)
+        attributes.append("image")
+        attributes.append('id="#{}"'.format(image_el_id))
+        attributes.append("images-handler")
+        # TODO: check hwo the images for images-handler have to be added....
+        for image_src_id in image_src_list:
+            attributes.append('src="#{}"'.format(image_src_id))
+        attributes.append('class="clickable"')
+        attributes.append('width="1"')
+        attributes.append('height="1"')
+        attributes.append('shadow="cast: false"')
+        # attributes.append('material="src:{}"'.format(video_src_id))
+        self.imagecount = self.imagecount + 1
+        return attributes
+
     def handle_custom_propertie(
         self, *, prop, obj, actualscale, actualposition, actualrotation
     ):
         # custom aframe code read from CUSTOM PROPERTIES
         custom_attributes = []
-        reflections = ""
-        animation = ""
-        link = ""
-        custom = ""
-        toggle = ""
-        video = False
-        image = False
         # print( "\n", K , "-" , obj[K], "\n" )
         if prop == "AFRAME_CUBEMAP" and self.scene.b_cubemap:
             if self.scene.b_camera_cube:
@@ -257,113 +382,9 @@ ${entity}
             custom_attributes.append('onclick="{}"'.format(obj[prop]))
             custom_attributes.append('class="clickable"')
         elif prop == "AFRAME_VIDEO":
-            # print("--------------- pos " + actualposition)
-            # print("--------------- rot " + actualrotation)
-            # print("--------------- scale " + actualscale)
-            # filename = os.path.join(
-            #     base_path, constants.PATH_ASSETS, obj.name
-            # )  # + '.glft' )
-            # bpy.ops.export_scene.gltf(
-            #     filepath=filename,
-            #     export_format="GLTF_EMBEDDED",
-            #     use_selection=True,
-            # )
-            # assets.append(
-            #     '\n\t\t\t\t<a-asset-item id="'
-            #     + obj.name
-            #     + '" src="./assets/'
-            #     + obj.name
-            #     + ".gltf"
-            #     + '"></a-asset-item>'
-            # )
-            self.assets.append(
-                '\n\t\t\t\t<video id="video_'
-                + str(self.videocount)
-                + '" loop="true" autoplay="true" src="./media/'
-                + obj[prop]
-                + '"></video>'
-            )
-            self.entities.append(
-                '\n\t\t\t<a-video id="#v_'
-                + str(self.videocount)
-                + '" src="#video_'
-                + str(self.videocount)
-                + '" width="1" height="1" scale="'
-                + actualscale
-                + '" position="'
-                + actualposition
-                + '" rotation="'
-                + actualrotation
-                + '" visible="true" shadow="cast: false" '
-                + animation
-                + link
-                + "></a-video>"
-            )
-            # self.entities.append(
-            #     '\n\t\t\t<a-video id="#v_'
-            #     + str(self.videocount)
-            #     + '" src="#video_'
-            #     + str(self.videocount)
-            #     + '" width="'
-            #     + str(bpy.data.objects[obj.name].scale.x)
-            #     + '" height="'
-            #     + str(bpy.data.objects[obj.name].scale.y)
-            #     + '" scale="1 1 1" position="'
-            #     + actualposition
-            #     + '" rotation="'
-            #     + actualrotation
-            #     + '" visible="true" shadow="cast: false" '
-            #     + animation
-            #     + link
-            #     + "></a-video>"
-            # )
-            # self.entities.append(
-            #     '\n\t\t\t<a-entity id="#'
-            #     + obj.name
-            #     + '" gltf-model="#'
-            #     + obj.name
-            #     + '" material="src: #video_'
-            #     + str(self.videocount)
-            #     + '" scale="'
-            #     + actualscale
-            #     + '" rotation="'
-            #     + actualrotation
-            #     + '" position="'
-            #     + actualposition
-            #     + '"></a-entity>'
-            # )
-            video = True
-            self.videocount = self.videocount + 1
+            custom_attributes.extend(self.handle_propertie_video(prop, obj))
         elif prop == "AFRAME_IMAGES":
-            # print(".....images")
-            image = True
-            self.imagecount = self.imagecount + 1
-            # load prop
-            # json_images = '{"1": "image1.jpg", "2": "image2.jpg"}'
-            json_images = obj[prop]
-            json_dictionary = json.loads(json_images)
-            for key in json_dictionary:
-                # print(key, ":", json_dictionary[key])
-                self.assets.append(
-                    '\n\t\t\t\t<img id="image_'
-                    + key
-                    + '" src="./media/'
-                    + json_dictionary[key]
-                    + '"></img>'
-                )
-            self.entities.append(
-                '\n\t\t\t<a-image images-handler id="#i_'
-                + str(self.imagecount)
-                + '" src="#image_'
-                + key
-                + '" class="clickable" width="1" height="1" scale="'
-                + actualscale
-                + '" position="'
-                + actualposition
-                + '" rotation="'
-                + actualrotation
-                + '" visible="true" shadow="cast: false"></a-image>'
-            )
+            custom_attributes.extend(self.handle_propertie_image(prop, obj))
         elif prop == "AFRAME_SHOW_HIDE_OBJECT":
             custom_attributes.append('toggle-handler="target: #{};"'.format(obj[prop]))
             custom_attributes.append('class="clickable"')
@@ -372,25 +393,29 @@ ${entity}
             custom_attributes.append(
                 '{attr}="{value}"'.format(attr=attr, value=obj[prop])
             )
-        return video, image, custom_attributes
+        return custom_attributes
 
-    def handle_object_mesh(self, *, obj, actualscale, actualposition, actualrotation):
-        video = False
-        image = False
-        custom_attributes = []
+    def export_object_type_mesh(
+        self, *, obj, actualscale, actualposition, actualrotation
+    ):
+        entity_attributes = []
         for prop in obj.keys():
             if prop not in "_RNA_UI":
                 prop_custom_attributes = []
-                video, image, prop_custom_attributes = self.handle_custom_propertie(
+                prop_custom_attributes = self.handle_custom_propertie(
                     prop=prop,
                     obj=obj,
                     actualscale=actualscale,
                     actualposition=actualposition,
                     actualrotation=actualrotation,
                 )
-                custom_attributes.extend(prop_custom_attributes)
+                entity_attributes.extend(prop_custom_attributes)
 
-        if video is False and image is False:
+        # prepare export
+        mesh_name = ""
+        if not any(item.contains(("image", "video")) for item in entity_attributes):
+            #####################
+            # handle lightmap things
             baked = ""
             # check if baked texture is present on filesystem
             # images = bpy.data.images
@@ -404,104 +429,34 @@ ${entity}
             for file in self.lightmap_files:
                 if obj.name + "_baked" in file:
                     print("[LIGHTMAP] Found lightmap: " + file)
-                    baked = (
-                        'light-map-geometry="path: lightmaps/'
-                        + file
-                        + "; intensity: "
-                        + str(self.scene.f_lightMapIntensity)
-                        + '"'
+                    entity_attributes.append(
+                        'light-map-geometry="path: lightmaps/{}; intensity:{};"'.format(
+                            file, self.scene.f_lightMapIntensity
+                        )
                     )
+            #####################
+            # handle mesh
+            mesh_name = self.get_or_export_mesh(obj)
+            entity_attributes.append('gltf-model="#{mesh_name}"\n')
 
-            mesh_name = obj.data.name
-            # check if we have exported this mesh already...
-            print("  self.exported_meshes", self.exported_meshes)
-            print("  mesh_name", mesh_name)
-            if mesh_name not in self.exported_meshes:
-                # export as gltf
-                # print("obj", obj)
-                filename = os.path.join(
-                    self.base_path, constants.PATH_ASSETS, mesh_name
-                )  # + '.glft' )
-                print("  filename", filename)
-                location = obj.location.copy()
-                rotation = obj.rotation_euler.copy()
-                bpy.ops.object.location_clear()
-                bpy.ops.object.rotation_clear()
+        shadow_cast = "false"
+        if self.scene.b_cast_shadows:
+            shadow_cast = "true"
 
-                bpy.ops.export_scene.gltf(
-                    filepath=filename,
-                    export_format="GLTF_EMBEDDED",
-                    use_selection=True,
-                    # export_apply=True,
-                    export_apply=self.scene.export_apply_modifiers,
-                )
+        entity_str = self.prepare_entity_str(entity_attributes)
+        # replace placeholders with values
+        entity_str = entity_str.format(
+            obj_name=obj.name,
+            mesh_name=mesh_name,
+            baked=baked,
+            position=actualposition,
+            rotation=actualrotation,
+            scale="1 1 1",
+            shadow_cast=shadow_cast,
+        )
+        self.entities.append(entity_str)
 
-                obj.location = location
-                obj.rotation_euler = rotation
-                self.exported_meshes.append(mesh_name)
-
-                # single line format
-                self.assets.append(
-                    "                <a-asset-item "
-                    'id="{mesh_name}" '
-                    'src="./assets/{mesh_name}.gltf" '
-                    "></a-asset-item>\n"
-                    "".format(mesh_name=mesh_name)
-                )
-                # multiline format
-                # self.assets.append(
-                #     "                <a-asset-item \n"
-                #     '                    id="{obj_name}"\n'
-                #     '                    src="./assets/{obj_name}.gltf"\n'
-                #     "                ></a-asset-item>\n"
-                #     "".format(obj_name=obj.name)
-                # )
-
-            if self.scene.b_cast_shadows:
-                shadow_cast = "true"
-            else:
-                shadow_cast = "false"
-
-            custom_attributes_text = ""
-            print("custom_attributes:\n", "\n  ".join(custom_attributes))
-            for item in custom_attributes:
-                custom_attributes_text += "                    {}\n".format(item)
-            # print("custom_attributes_text", custom_attributes_text)
-            self.entities.append(
-                "                <a-entity \n"
-                '                    id="#{obj_name}"\n'
-                "                    {baked} \n"
-                '                    gltf-model="#{mesh_name}"\n'
-                '                    shadow="cast: {shadow_cast}" \n'
-                '                    scale="1 1 1"\n'
-                '                    position="{position}"\n'
-                '                    rotation="{rotation}"\n'
-                '                    visible="true"\n'
-                "{other_attributes}"
-                "                ></a-entity>\n"
-                "".format(
-                    obj_name=obj.name,
-                    mesh_name=mesh_name,
-                    baked=baked,
-                    position=actualposition,
-                    rotation=actualrotation,
-                    shadow_cast=shadow_cast,
-                    other_attributes=custom_attributes_text,
-                )
-            )
-
-    # def search_object_mesh(obj):
-    #     pass
-
-    def export_object(self, obj):
-        print("[AFRAME EXPORTER] loop object " + obj.name)
-
-        # check for duplicate exports
-        mesh_name = obj.data.name
-
-        bpy.ops.object.select_all(action="DESELECT")
-        obj.select_set(state=True)
-        bpy.context.view_layer.objects.active = obj
+    def get_object_coordinates(self, obj):
         # bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
         # bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
         location = obj.location.copy()
@@ -568,15 +523,30 @@ ${entity}
         print("  actualposition", actualposition)
         print("  actualrotation", actualrotation)
         print("  actualscale", actualscale)
+        return actualposition, actualrotation, actualscale
 
-        # export gltf
+    def export_object(self, obj):
+        bpy.ops.object.select_all(action="DESELECT")
+        obj.select_set(state=True)
+        bpy.context.view_layer.objects.active = obj
+
+        actualposition, actualrotation, actualscale = self.get_object_coordinates(obj)
+
         if obj.type == "MESH":
             # print(obj.name,"custom properties:")
-            self.handle_object_mesh(
+            self.export_object_type_mesh(
                 obj=obj,
                 actualscale=actualscale,
                 actualposition=actualposition,
                 actualrotation=actualrotation,
+            )
+        else:
+            print(
+                b_helper.colors.fg.red
+                + "object '{}' of type '{}' currently not implemented. ".format(
+                    obj.name, obj.type
+                )
+                + b_helper.colors.reset
             )
         # deselect object
         obj.select_set(state=False)
@@ -594,23 +564,21 @@ ${entity}
         for file in self.lightmap_files:
             print("[LIGHTMAP] Found Lightmap file: " + file)
 
+        # debug: list all objects
+        # for obj in bpy.data.objects:
+        #     print(obj)
+
         for obj in bpy.data.objects:
+            msg = "[AFRAME EXPORTER] object '{}' ".format(obj.name)
             if obj.type not in exclusion_obj_types:
                 if obj.visible_get():
+                    print(msg + "export..")
                     self.export_object(obj)
                     self.exported_obj += 1
                 else:
-                    print(
-                        "[AFRAME EXPORTER] loop object "
-                        + obj.name
-                        + " ignored: not visible"
-                    )
+                    print(msg + "ignored: not visible")
             else:
-                print(
-                    "[AFRAME EXPORTER] loop object "
-                    + obj.name
-                    + " ignored: not exportable"
-                )
+                print(msg + "ignored: not exportable")
 
         bpy.ops.object.select_all(action="DESELECT")
 
