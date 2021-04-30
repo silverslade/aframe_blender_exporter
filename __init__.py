@@ -297,6 +297,7 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.prop(scene, "export_path")
             box.prop(scene, "b_export_single_model")
             box.prop(scene, "export_apply_modifiers")
+            box.prop(scene, "s_extra_output")
             box.operator("aframe.clear_asset_dir", text="Clear Assets Directory")
 
         row = layout.row(align=True)
@@ -570,6 +571,13 @@ _props = [
         "apply modifieres - this way shapekeys do not work..",
     ),
     ("str", "s_project_name", "Name", "Project's name", "aframe-prj"),
+    (
+        "str",
+        "s_extra_output",
+        "Extra Output",
+        "Export aframe scene to a seccond extra File - specify name here",
+        "aframe.php",
+    ),
     ("str", "s_output", "output", "output export", "output"),
     (
         "bool",

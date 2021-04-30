@@ -4,6 +4,7 @@
 """Export scene as a-frame website."""
 
 # import sys
+import re
 import shutil
 import math
 from string import Template
@@ -165,6 +166,201 @@ ${entity}
     <!-- Generated automatically by AFRAME Exporter for Blender - https://silverslade.itch.io/a-frame-blender-exporter -->
     """
             )
+
+    def create_default_extra_template(self, filename="aframe.php"):
+        """extra output php a-frame template."""
+        if not bpy.data.texts.get(filename):
+            tpl = bpy.data.texts.new(filename)
+
+            tpl.from_string(
+                """<!-- Generated automatically by AFRAME Exporter for Blender -->
+<!-- https://github.com/s-light/aframe_blender_exporter -->
+<a-scene
+    initScene
+    ${stats}
+    ${joystick}
+    ${render_shadows}
+    ${renderer}
+>
+    <!-- Assets -->
+    <!-- MAGIC-COMMENT src_prepend:"<?php echo get_stylesheet_directory_uri(); ?>/" -->
+    <a-assets>
+        ${asset}
+    </a-assets>
+
+    <!-- Entities -->
+    ${entity}
+
+
+
+
+
+    <!-- Camera -->
+    <!-- https://github.com/supermedium/superframe/tree/master/components/orbit-controls -->
+    <a-entity id="camera"
+        camera="
+            fov:  60;
+            far:  520;
+        "
+        look-controls="enabled:false"
+        orbit-controls="
+            target: 0 ${player_height} 0;
+            initialPosition: 0 ${player_height} 1.2;
+            minPolarAngle: 40;
+            maxPolarAngle: 120;
+            rotateSpeed: ${player_speed};
+            enableZoom: false;
+            zoomSpeed: 1;
+            minDistance: 0;
+            maxDistance: 2.8;
+            minZoom: 0;
+            enablePan: false;
+            autoRotate: true;
+            autoRotateSpeed: 0.005;
+        "
+    >
+        <a-entity
+            id="cursor"
+            cursor="
+                fuse: false;
+                rayOrigin: mouse;
+            "
+            position="0 0 -0.5"
+            geometry="primitive: circle; radius: 0.0005;"
+            material="color: #CCC; shader: flat;"
+            raycaster="
+                far: 10.0;
+                interval: 300.0;
+                objects: .clickable,.links;
+            "
+        >
+        <!--
+        showLine: true;
+        lineColor: red;
+        lineOpacity: 0.5
+        ${show_raycast}
+        -->
+        </a-entity>
+    </a-entity>
+    <!--
+    look-controls="pointerLockEnabled: true"
+    -->
+
+    <!-- <a-entity id="player"
+        position="0 -0.2 0"
+        movement-controls="speed: ${player_speed};">
+        ${vr_controllers}
+    </a-entity> -->
+
+
+
+
+
+
+    <!-- Lights -->
+    <a-entity
+        id="light_ambient"
+        light="
+            type: ambient;
+            intensity: ${ambient_intensity}
+        "
+    ></a-entity>
+    <a-entity
+        id="light_sun"
+        light="
+            type: directional;
+            intensity: 2;
+            castShadow: true;
+            shadowBias: -0.0004;
+
+            shadowMapHeight: 2048;
+            shadowMapWidth: 2048;
+
+            shadowCameraNear: 0;
+            shadowCameraFar: 50;
+            shadowCameraFov: 102;
+
+            shadowCameraBottom: 12;
+            shadowCameraTop: -5;
+            shadowCameraRight: 10;
+            shadowCameraLeft: -10;
+
+            shadowRadius: 2
+        "
+        position="4 10 10"
+    ></a-entity>
+    <a-entity
+        id="light_room_ceiling"
+        light="
+            type: point;
+            intensity: 3;
+            castShadow: true;
+
+            shadowBias: -0.001;
+
+            shadowMapHeight: 512;
+            shadowMapWidth: 512;
+
+            shadowCameraNear: 0;
+            shadowCameraFar: 50;
+            shadowCameraFov: 102;
+
+            shadowCameraBottom: 12;
+            shadowCameraTop: -5;
+            shadowCameraRight: 10;
+            shadowCameraLeft: -10;
+
+            shadowRadius: 2
+        "
+        position="0 2.5 0"
+    ></a-entity>
+    <a-entity
+        id="light_room_lamp"
+        light="
+            type: point;
+            intensity: 1;
+            castShadow: true;
+
+            shadowBias: -0.001;
+
+            shadowMapHeight: 512;
+            shadowMapWidth: 512;
+
+            shadowCameraNear: 0;
+            shadowCameraFar: 50;
+            shadowCameraFov: 102;
+
+            shadowCameraBottom: 12;
+            shadowCameraTop: -5;
+            shadowCameraRight: 10;
+            shadowCameraLeft: -10;
+
+            shadowRadius: 2
+        "
+        position="2.0 0.8 -2.1"
+    ></a-entity>
+
+
+
+    <!-- Sky -->
+    ${sky}
+    <!-- THE END -->
+    <noscript>
+        <style media="screen">
+            a-scene {
+                display: block;
+                position: absolute;
+                height: 0%;
+                width: 0%;
+                top: 0;
+            }
+        </style>
+    </noscript>
+</a-scene>
+    """
+            )
+
+        return filename
 
     def create_diretories(self):
         ALL_PATHS = [
@@ -589,6 +785,79 @@ ${entity}
 
         bpy.ops.object.select_all(action="DESELECT")
 
+    def handle_magic_comment(self, input_text):
+        # <!-- MAGIC-COMMENT src_prepend:"<?php echo get_stylesheet_directory_uri(); ?>/" -->
+        regex_find_magic_comment = re.compile(r"<!--\s*MAGIC-COMMENT\s*?(.*?)\s*?-->")
+        magic_comments = regex_find_magic_comment.findall(input_text)
+        print("magic_comments", magic_comments)
+        for magic_comment in magic_comments:
+            print("magic_comment", magic_comment)
+            regex_split_attributes = re.compile(
+                r"(\S+)=[\"']?((?:.(?![\"']?\s+(?:\S+)=|\s*\/?[\"']))+.)[\"']?"
+            )
+            mc_attributes = regex_split_attributes.match(magic_comment).groups()
+            print("mc_attributes", mc_attributes)
+        return input_text
+
+    def get_shadow(self):
+        showcast_shadows = "false"
+        template_render_shadows = 'shadow="type: basic; autoUpdate: false;"'
+        if self.scene.b_cast_shadows:
+            showcast_shadows = "true"
+            template_render_shadows = 'shadow="type: pcfsoft; autoUpdate: true;"'
+        return showcast_shadows, template_render_shadows
+
+    def get_sky(self):
+        show_env_sky = '<a-sky color="#ECECEC"></a-sky>'
+        if self.scene.b_show_env_sky:
+            show_env_sky = (
+                '<a-sky src="#sky" material="" geometry="" rotation="0 90 0"></a-sky>'
+            )
+        return show_env_sky
+
+    def get_raycaster_showvr(self):
+        raycaster = ""
+        if self.scene.b_raycast:
+            raycaster = (
+                'raycaster = "far: '
+                + str(self.scene.f_raycast_length)
+                + "; interval: "
+                + str(self.scene.f_raycast_interval)
+                + '; objects: .clickable,.links"'
+            )
+
+        showvr_controllers = ""
+        # vr_controllers
+        if self.scene.b_vr_controllers:
+            showvr_controllers = (
+                '<a-entity id="leftHand" oculus-touch-controls="hand: left" vive-controls="hand: left"></a-entity>\n'  # noqa
+                + '\t\t\t\t\t<a-entity id="rightHand" laser-controls oculus-touch-controls="hand: right" vive-controls="hand: right" '  # noqa
+                + raycaster
+                + "></a-entity>"
+            )
+        return raycaster, showvr_controllers
+
+    def get_renderer(self):
+        showrenderer = (
+            'renderer="antialias: '
+            + str(self.scene.b_aa).lower()
+            + "; colorManagement: "
+            + str(self.scene.b_colorManagement).lower()
+            + "; physicallyCorrectLights: "
+            + str(self.scene.b_physicallyCorrectLights).lower()
+            + ';"'
+        )
+        return showrenderer
+
+    def get_light(self):
+        light_directional_intensity = "1.0"
+        light_ambient_intensity = "1.0"
+        if self.scene.b_use_lightmapper:
+            # if use bake, the light should have intensity near zero
+            light_directional_intensity = "0"
+            light_ambient_intensity = "0.1"
+        return light_directional_intensity, light_ambient_intensity
+
     def fill_template(self):
         # Templating ------------------------------
         # print(self.assets)
@@ -601,73 +870,24 @@ ${entity}
             all_entities += y
 
         # scene
+        showstats = ""
         if self.scene.b_stats:
             showstats = "stats"
-        else:
-            showstats = ""
 
         # joystick
+        showjoystick = ""
         if self.scene.b_joystick:
             showjoystick = "joystick"
-        else:
-            showjoystick = ""
 
-        if self.scene.b_raycast:
-            raycaster = (
-                'raycaster = "far: '
-                + str(self.scene.f_raycast_length)
-                + "; interval: "
-                + str(self.scene.f_raycast_interval)
-                + '; objects: .clickable,.links"'
-            )
-        else:
-            raycaster = ""
+        raycaster, showvr_controllers = self.get_raycaster_showvr()
 
-        # vr_controllers
-        if self.scene.b_vr_controllers:
-            showvr_controllers = (
-                '<a-entity id="leftHand" oculus-touch-controls="hand: left" vive-controls="hand: left"></a-entity>\n'  # noqa
-                + '\t\t\t\t\t<a-entity id="rightHand" laser-controls oculus-touch-controls="hand: right" vive-controls="hand: right" '  # noqa
-                + raycaster
-                + "></a-entity>"
-            )
-        else:
-            showvr_controllers = ""
+        showcast_shadows, template_render_shadows = self.get_shadow()
 
-        # shadows
-        if self.scene.b_cast_shadows:
-            showcast_shadows = "true"
-            template_render_shadows = 'shadow="type: pcfsoft; autoUpdate: true;"'
-        else:
-            showcast_shadows = "false"
-            template_render_shadows = 'shadow="type: basic; autoUpdate: false;"'
+        show_env_sky = self.get_sky()
 
-        # Sky
-        if self.scene.b_show_env_sky:
-            show_env_sky = (
-                '<a-sky src="#sky" material="" geometry="" rotation="0 90 0"></a-sky>'
-            )
-        else:
-            show_env_sky = '<a-sky color="#ECECEC"></a-sky>'
+        light_directional_intensity, light_ambient_intensity = self.get_light()
 
-        # if use bake, the light should have intensity near zero
-        if self.scene.b_use_lightmapper:
-            light_directional_intensity = "0"
-            light_ambient_intensity = "0.1"
-        else:
-            light_directional_intensity = "1.0"
-            light_ambient_intensity = "1.0"
-
-        # Renderer
-        showrenderer = (
-            'renderer="antialias: '
-            + str(self.scene.b_aa).lower()
-            + "; colorManagement: "
-            + str(self.scene.b_colorManagement).lower()
-            + "; physicallyCorrectLights: "
-            + str(self.scene.b_physicallyCorrectLights).lower()
-            + ';"'
-        )
+        showrenderer = self.get_renderer()
 
         self.create_default_template()
         t = Template(bpy.data.texts["index.html"].as_string())
@@ -688,7 +908,29 @@ ${entity}
             render_shadows=template_render_shadows,
             renderer=showrenderer,
         )
-        return s
+        s2 = None
+        if self.scene.s_extra_output:
+            self.create_default_extra_template(self.scene.s_extra_output)
+            t2 = Template(bpy.data.texts[self.scene.s_extra_output].as_string())
+            s2 = t2.substitute(
+                asset=all_assets,
+                entity=all_entities,
+                stats=showstats,
+                aframe_version=self.scene.s_aframe_version,
+                joystick=showjoystick,
+                vr_controllers=showvr_controllers,
+                cast_shadows=showcast_shadows,
+                player_height=self.scene.f_player_height,
+                player_speed=self.scene.f_player_speed,
+                show_raycast=raycaster,
+                sky=show_env_sky,
+                directional_intensity=light_directional_intensity,
+                ambient_intensity=light_ambient_intensity,
+                render_shadows=template_render_shadows,
+                renderer=showrenderer,
+            )
+            s2 = self.handle_magic_comment(s2)
+        return s, s2
 
     # ##########################################
     # main
@@ -726,13 +968,18 @@ ${entity}
 
         self.export_objects()
 
-        html_site_content = self.fill_template()
+        html_site_content, extra_output_content = self.fill_template()
 
         # print(s)
 
         # Saving the main INDEX FILE
         with open(os.path.join(self.base_path, constants.PATH_INDEX), "w") as file:
             file.write(html_site_content)
+        if extra_output_content:
+            with open(
+                os.path.join(self.base_path, self.scene.s_extra_output), "w"
+            ) as file:
+                file.write(extra_output_content)
 
         self.scene.s_output = str(self.exported_obj) + " meshes exported"
         # self.report({'INFO'}, str(exported_obj)+" meshes exported")
