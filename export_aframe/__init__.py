@@ -167,7 +167,7 @@ ${entity}
     """
             )
 
-    def create_default_extra_template(self, filename="aframe.php"):
+    def create_default_extra_template(self, filename="ascene.php"):
         """extra output php a-frame template."""
         if not bpy.data.texts.get(filename):
             tpl = bpy.data.texts.new(filename)
@@ -183,7 +183,7 @@ ${entity}
     ${renderer}
 >
     <!-- Assets -->
-    <!-- MAGIC-COMMENT src_prepend:"<?php echo get_stylesheet_directory_uri(); ?>/" -->
+    <!-- MAGIC-COMMENT src_prepend="<?php echo get_stylesheet_directory_uri(); ?>/" -->
     <a-assets>
         ${asset}
     </a-assets>
@@ -785,18 +785,55 @@ ${entity}
 
         bpy.ops.object.select_all(action="DESELECT")
 
-    def handle_magic_comment(self, input_text):
-        # <!-- MAGIC-COMMENT src_prepend:"<?php echo get_stylesheet_directory_uri(); ?>/" -->
+    def magic_comments_find_and_parse(self, input_text):
+        mc_attributes = []
+        # <!-- MAGIC-COMMENT src_prepend="<?php echo get_stylesheet_directory_uri(); ?>/" -->
         regex_find_magic_comment = re.compile(r"<!--\s*MAGIC-COMMENT\s*?(.*?)\s*?-->")
         magic_comments = regex_find_magic_comment.findall(input_text)
-        print("magic_comments", magic_comments)
+        # print("magic_comments", magic_comments)
         for magic_comment in magic_comments:
-            print("magic_comment", magic_comment)
+            magic_comment = magic_comment.strip()
+            # print("magic_comment '{}'".format(magic_comment))
+            # regex_split_attributes = re.compile(
+            #     # r"""(\S+)=["']?((?:.(?!["']?\s+(?:\S+)=|\s*\/?[>"']))+.)["']?"""
+            #     r'''(\S+)="((?:.(?!"\s+(?:\S+)=|\s*\/?[>"']))+.)"'''
+            #     r"""(\S+)="?((?:.(?!"?\s+(?:\S+)=|\s*"))+.)"?"""
+            # )
             regex_split_attributes = re.compile(
-                r"(\S+)=[\"']?((?:.(?![\"']?\s+(?:\S+)=|\s*\/?[\"']))+.)[\"']?"
+                r"""(\S+)="?((?:.(?!"?\s+(?:\S+)=|\s*"))+.)"?"""
             )
-            mc_attributes = regex_split_attributes.match(magic_comment).groups()
-            print("mc_attributes", mc_attributes)
+            mc_attributes_matchobj = regex_split_attributes.match(magic_comment)
+            # print("regex_split_attributes", regex_split_attributes)
+            # print("mc_attributes_matchobj", mc_attributes_matchobj)
+            if mc_attributes_matchobj:
+                mc_attributes_raw = mc_attributes_matchobj.groups()
+                # print("mc_attributes_raw", mc_attributes_raw)
+                mc_attributes.append(
+                    {"name": mc_attributes_raw[0], "value": mc_attributes_raw[1]}
+                )
+        return mc_attributes
+
+    def magic_comment_handle__src_prepend(self, value, input_text):
+        result_text = input_text.replace('src=".', 'src="{}'.format(value))
+        return result_text
+
+    def magic_comment_handle_attribute(self, mc_attribute, input_text):
+        result_text = input_text
+        attr_name = mc_attribute["name"]
+        attr_value = mc_attribute["value"]
+        if attr_name == "src_prepend":
+            result_text = self.magic_comment_handle__src_prepend(attr_value, input_text)
+        elif attr_name == "XYZ":
+            pass
+        else:
+            print("attribute name '{}' not implemented.".format(attr_name))
+        return result_text
+
+    def handle_magic_comment(self, input_text):
+        mc_attributes = self.magic_comments_find_and_parse(input_text)
+        print("mc_attributes", mc_attributes)
+        for mc_attribute in mc_attributes:
+            input_text = self.magic_comment_handle_attribute(mc_attribute, input_text)
         return input_text
 
     def get_shadow(self):

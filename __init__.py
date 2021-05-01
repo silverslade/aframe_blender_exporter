@@ -576,7 +576,7 @@ _props = [
         "s_extra_output",
         "Extra Output",
         "Export aframe scene to a seccond extra File - specify name here",
-        "aframe.php",
+        "ascene.php",
     ),
     ("str", "s_output", "output", "output export", "output"),
     (
