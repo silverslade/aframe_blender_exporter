@@ -91,15 +91,14 @@ class ExportAframe(object):
             <link rel="stylesheet" type="text/css" href="style.css">
         </head>
         <body onload="init();">
-            <a-scene ${stats} ${joystick} ${render_shadows} ${renderer}>
+            <a-scene
+                ${stats}
+                ${joystick}
+                ${render_shadows}
+                ${renderer}
+            >
                 <!-- Assets -->
                 <a-assets>
-                    <img id="icon-play"           src="./resources/play.png">
-                    <img id="icon-pause"          src="./resources/pause.png">
-                    <img id="icon-play-skip-back" src="./resources/play-skip-back.png">
-                    <img id="icon-mute"           src="./resources/mute.png">
-                    <img id="icon-volume-low"     src="./resources/volume-low.png">
-                    <img id="icon-volume-high"    src="./resources/volume-high.png">
 ${asset}
                 </a-assets>
 
@@ -371,67 +370,137 @@ ${entity}
             print("--- DEST [%s] [%s] {%s}" % (self.base_path, dp, p))
             os.makedirs(dp, exist_ok=True)
 
-    def resouce_handling(self):
-        """Check if addon or script and build correct path."""
+    def add_resouce(
+        self,
+        dest_path,
+        filename,
+        overwrite,
+        include_in,
+        add_asset=False,
+        copy_source=None,
+    ):
+        include_set = self.scene.e_ressource_set
+        if include_set in include_in:
+            SRC_RES = os.path.join(self.script_directory, constants.PATH_RESOURCES)
+            source_fullpath = os.path.join(SRC_RES, filename)
+            if copy_source:
+                source_fullpath = copy_source
+            target_fullpath = os.path.join(self.base_path, dest_path, filename)
+
+            if overwrite:
+                shutil.copyfile(source_fullpath, target_fullpath)
+            else:
+                if not os.path.exists(target_fullpath):
+                    shutil.copyfile(source_fullpath, target_fullpath)
+
+            if add_asset:
+                self.assets.append(
+                    '<img id="{id}" src="./{path}/{filename}"></img>'.format(
+                        id=add_asset, path=dest_path, filename=filename
+                    )
+                )
+
+    def add_resouce_icons(self):
         _resources = [
-            # dest_path, fname, overwrite, include_set
-            [".", "favicon.ico", False, ["default", "minimal"]],
-            [".", "style.css", False, ["default", "minimal"]],
-            [constants.PATH_RESOURCES, "play.png", False, ["default"]],
-            [constants.PATH_RESOURCES, "pause.png", False, ["default"]],
-            [constants.PATH_RESOURCES, "play-skip-back.png", False, ["default"]],
-            [constants.PATH_RESOURCES, "mute.png", False, ["default"]],
-            [constants.PATH_RESOURCES, "volume-low.png", False, ["default"]],
-            [constants.PATH_RESOURCES, "volume-high.png", False, ["default"]],
-            [constants.PATH_MEDIA, "image1.png", False, ["default"]],
-            [constants.PATH_MEDIA, "image2.png", False, ["default"]],
-            [constants.PATH_JAVASCRIPT, "webxr.js", True, ["default", "minimal"]],
-            [constants.PATH_JAVASCRIPT, "joystick.js", True, ["default", "minimal"]],
+            # dest_path, filename, overwrite, include_set, add_asset
+            [constants.PATH_RESOURCES, "play.png", False, ["default"], "icon-play"],
+            [constants.PATH_RESOURCES, "pause.png", False, ["default"], "icon-pause"],
+            [
+                constants.PATH_RESOURCES,
+                "play-skip-back.png",
+                False,
+                ["default"],
+                "icon-play-skip-back",
+            ],
+            [constants.PATH_RESOURCES, "mute.png", False, ["default"], "icon-mute"],
+            [
+                constants.PATH_RESOURCES,
+                "volume-low.png",
+                False,
+                ["default"],
+                "icon-volume-low",
+            ],
+            [
+                constants.PATH_RESOURCES,
+                "volume-high.png",
+                False,
+                ["default"],
+                "icon-volume-high",
+            ],
+        ]
+        for resource in _resources:
+            self.add_resouce(*resource)
+
+    def add_resouce_enviroment(self):
+        """add environment box."""
+        _resources = [
+            # dest_path, filename, overwrite, include_set, add_asset
+            # [constants.PATH_ENVIRONMENT, "negx.jpg", True, ["default"], "negx"],
+            # [constants.PATH_ENVIRONMENT, "negy.jpg", True, ["default"], "negy"],
+            # [constants.PATH_ENVIRONMENT, "negz.jpg", True, ["default"], "negz"],
+            # [constants.PATH_ENVIRONMENT, "posx.jpg", True, ["default"], "posx"],
+            # [constants.PATH_ENVIRONMENT, "posy.jpg", True, ["default"], "posy"],
+            # [constants.PATH_ENVIRONMENT, "posz.jpg", True, ["default"], "posz"],
+            [constants.PATH_ENVIRONMENT, "negx.jpg", True, ["default"], False],
+            [constants.PATH_ENVIRONMENT, "negy.jpg", True, ["default"], False],
+            [constants.PATH_ENVIRONMENT, "negz.jpg", True, ["default"], False],
+            [constants.PATH_ENVIRONMENT, "posx.jpg", True, ["default"], False],
+            [constants.PATH_ENVIRONMENT, "posy.jpg", True, ["default"], False],
+            [constants.PATH_ENVIRONMENT, "posz.jpg", True, ["default"], False],
+        ]
+
+        for resource in _resources:
+            self.add_resouce(*resource)
+
+    def add_resouce_example_media(self):
+        """add example media."""
+        _resources = [
+            # dest_path, filename, overwrite, include_set, add_asset
+            [constants.PATH_MEDIA, "image1.png", False, ["default"], "image1"],
+            [constants.PATH_MEDIA, "image2.png", False, ["default"], "image2"],
+        ]
+
+        for resource in _resources:
+            self.add_resouce(*resource)
+
+    def add_resouce_basic_html_js(self):
+        """Add all things needed for the basic html website."""
+        _resources = [
+            # dest_path, filename, overwrite, include_set, add_asset
+            [".", "favicon.ico", False, ["default", "minimal"], False],
+            [".", "style.css", False, ["default", "minimal"], False],
+            [
+                constants.PATH_JAVASCRIPT,
+                "webxr.js",
+                True,
+                ["default", "minimal"],
+                False,
+            ],
+            [
+                constants.PATH_JAVASCRIPT,
+                "joystick.js",
+                True,
+                ["default", "minimal"],
+                False,
+            ],
             [
                 constants.PATH_JAVASCRIPT,
                 "camera-cube-env.js",
                 True,
                 ["default", "minimal"],
+                False,
             ],
-            [constants.PATH_ENVIRONMENT, "negx.jpg", True, ["default"]],
-            [constants.PATH_ENVIRONMENT, "negy.jpg", True, ["default"]],
-            [constants.PATH_ENVIRONMENT, "negz.jpg", True, ["default"]],
-            [constants.PATH_ENVIRONMENT, "posx.jpg", True, ["default"]],
-            [constants.PATH_ENVIRONMENT, "posy.jpg", True, ["default"]],
-            [constants.PATH_ENVIRONMENT, "posz.jpg", True, ["default"]],
         ]
 
-        if self.scene.b_show_env_sky:
-            sky_filename = "sky.jpg"
-            if self.scene.s_env_sky_filename:
-                sky_filename = self.scene.s_env_sky_filename
-            _resources.append(
-                [
-                    constants.PATH_ENVIRONMENT,
-                    sky_filename,
-                    False,
-                    ["default", "minimal", "external"],
-                ]
-            )
+        for resource in _resources:
+            self.add_resouce(*resource)
 
-        include_set = self.scene.e_ressource_set
-
-        SRC_RES = os.path.join(self.script_directory, constants.PATH_RESOURCES)
-        for dest_path, fname, overwrite, include_in in _resources:
-            if include_set in include_in:
-                if overwrite:
-                    shutil.copyfile(
-                        os.path.join(SRC_RES, fname),
-                        os.path.join(self.base_path, dest_path, fname),
-                    )
-                else:
-                    if not os.path.exists(
-                        os.path.join(self.base_path, dest_path, fname)
-                    ):
-                        shutil.copyfile(
-                            os.path.join(SRC_RES, fname),
-                            os.path.join(self.base_path, dest_path, fname),
-                        )
+    def resouce_handling(self):
+        """Add all needed resources."""
+        self.add_resouce_basic_html_js()
+        self.add_resouce_icons()
+        self.add_resouce_enviroment()
+        self.add_resouce_example_media()
 
     ###
     def prepare_entity_str(self, entity_attributes):
@@ -862,26 +931,35 @@ ${entity}
         return showcast_shadows, template_render_shadows
 
     def handle_sky(self):
-        # TODO: extract image from world settings:
-        #  bpy.data.worlds["World"].node_tree.nodes["Environment Texture"].image.name
-        # bpy.data.worlds["World"].node_tree.nodes["Environment Texture"].image.filepath_from_user()
-        id = "#sky"
+        id = "sky"
         if self.scene.b_show_env_sky:
             self.entities.append(
-                '<a-sky src="{id}" material="" geometry="" rotation="0 90 0"></a-sky>'
+                '<a-sky src="#{id}" material="" geometry="" rotation="0 90 0"></a-sky>'
                 "".format(id=id)
             )
-            sky_filename = "sky.jpg"
-            if self.scene.s_env_sky_filename:
-                sky_filename = self.scene.s_env_sky_filename
-            self.assets.append(
-                '<img id="{id}" src="./{path}/{filename}"></img>'.format(
-                    id=id, path=constants.PATH_ENVIRONMENT, filename=sky_filename
-                )
+            filename = "sky.jpg"
+            full_filepath = "."
+            try:
+                env_texture = bpy.data.worlds["World"].node_tree.nodes[
+                    "Environment Texture"
+                ]
+                full_filepath = env_texture.image.filepath_from_user()
+                filename = env_texture.image.name
+            except Exception as e:
+                self.report({"ERROR"}, e)
+
+            # TODO: if image is packed - unpack
+            dest_path = constants.PATH_ENVIRONMENT
+            overwrite = False
+            include_in = ["default", "minimal", "external"]
+            add_asset = id
+            copy_source = full_filepath
+            self.add_resouce(
+                dest_path, filename, overwrite, include_in, add_asset, copy_source,
             )
         else:
             self.entities.append(
-                '<a-sky id="{id}" color="#ECECFF"></a-sky>'.format(id=id)
+                '<a-sky id="#{id}" color="#ECECFF"></a-sky>'.format(id=id)
             )
 
     def get_raycaster_showvr(self):
@@ -977,7 +1055,12 @@ ${entity}
                 renderer=showrenderer,
             )
         except KeyError as e:
-            print("Template substitute error: no value for Key {}.".format(e))
+            self.report(
+                {"ERROR"},
+                "Template substitute error in '{}': no value for Key {}.".format(
+                    "index.html", e
+                ),
+            )
         s2 = None
         if self.scene.s_extra_output:
             self.create_default_extra_template(self.scene.s_extra_output)
@@ -1000,7 +1083,12 @@ ${entity}
                     renderer=showrenderer,
                 )
             except KeyError as e:
-                print("Template substitute error: no value for Key {}.".format(e))
+                self.report(
+                    {"ERROR"},
+                    "Template substitute error in '{}': no value for Key {}.".format(
+                        self.scene.s_extra_output, e
+                    ),
+                )
             s2 = self.handle_magic_comment(s2)
         return s, s2
 
@@ -1046,7 +1134,7 @@ ${entity}
 
         # print(s)
 
-        # Saving the main INDEX FILE
+        # writing the output files
         with open(os.path.join(self.base_path, constants.PATH_INDEX), "w") as file:
             file.write(html_site_content)
         if extra_output_content:
@@ -1055,6 +1143,7 @@ ${entity}
             ) as file:
                 file.write(extra_output_content)
 
-        self.scene.s_output = str(self.exported_obj) + " meshes exported"
-        # self.report({'INFO'}, str(exported_obj)+" meshes exported")
+        message = str(self.exported_obj) + " meshes exported"
+        self.scene.s_output = message
+        self.report({"INFO"}, message)
         return {"FINISHED"}
