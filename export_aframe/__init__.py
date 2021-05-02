@@ -94,7 +94,6 @@ class ExportAframe(object):
             <a-scene ${stats} ${joystick} ${render_shadows} ${renderer}>
                 <!-- Assets -->
                 <a-assets>
-                    <img id="sky"                 src="./resources/sky.jpg">
                     <img id="icon-play"           src="./resources/play.png">
                     <img id="icon-pause"          src="./resources/pause.png">
                     <img id="icon-play-skip-back" src="./resources/play-skip-back.png">
@@ -158,8 +157,6 @@ ${entity}
                     "
                 ></a-entity>
 
-                <!-- Sky -->
-                ${sky}
             </a-scene>
         </body>
     </html>
@@ -341,9 +338,6 @@ ${entity}
     ></a-entity>
 
 
-
-    <!-- Sky -->
-    ${sky}
     <!-- THE END -->
     <noscript>
         <style media="screen">
@@ -377,18 +371,12 @@ ${entity}
             print("--- DEST [%s] [%s] {%s}" % (self.base_path, dp, p))
             os.makedirs(dp, exist_ok=True)
 
-    def resouce_handling(self, include_set="default"):
+    def resouce_handling(self):
         """Check if addon or script and build correct path."""
         _resources = [
             # dest_path, fname, overwrite, include_set
             [".", "favicon.ico", False, ["default", "minimal"]],
             [".", "style.css", False, ["default", "minimal"]],
-            [
-                constants.PATH_RESOURCES,
-                "sky.jpg",
-                False,
-                ["default", "minimal", "external"],
-            ],
             [constants.PATH_RESOURCES, "play.png", False, ["default"]],
             [constants.PATH_RESOURCES, "pause.png", False, ["default"]],
             [constants.PATH_RESOURCES, "play-skip-back.png", False, ["default"]],
@@ -412,6 +400,18 @@ ${entity}
             [constants.PATH_ENVIRONMENT, "posy.jpg", True, ["default"]],
             [constants.PATH_ENVIRONMENT, "posz.jpg", True, ["default"]],
         ]
+
+        if self.scene.b_show_env_sky:
+            _resources.append(
+                [
+                    constants.PATH_ENVIRONMENT,
+                    "sky.jpg",
+                    False,
+                    ["default", "minimal", "external"],
+                ]
+            )
+
+        include_set = self.scene.e_ressource_set
 
         SRC_RES = os.path.join(self.script_directory, constants.PATH_RESOURCES)
         for dest_path, fname, overwrite, include_set in _resources:
@@ -858,13 +858,22 @@ ${entity}
             template_render_shadows = 'shadow="type: pcfsoft; autoUpdate: true;"'
         return showcast_shadows, template_render_shadows
 
-    def get_sky(self):
-        show_env_sky = '<a-sky color="#ECECEC"></a-sky>'
+    def handle_sky(self):
+        id = "#sky"
         if self.scene.b_show_env_sky:
-            show_env_sky = (
-                '<a-sky src="#sky" material="" geometry="" rotation="0 90 0"></a-sky>'
+            self.entities.append(
+                '<a-sky src="{id}" material="" geometry="" rotation="0 90 0"></a-sky>'
+                "".format(id=id)
             )
-        return show_env_sky
+            self.assets.append(
+                '<img id="{id}" src="./{path}/{filename}"></img>'.format(
+                    id=id, path=constants.PATH_ENVIRONMENT, filename="sky.jpg"
+                )
+            )
+        else:
+            self.entities.append(
+                '<a-sky id="{id}" color="#ECECFF"></a-sky>'.format(id=id)
+            )
 
     def get_raycaster_showvr(self):
         raycaster = ""
@@ -934,7 +943,7 @@ ${entity}
 
         showcast_shadows, template_render_shadows = self.get_shadow()
 
-        show_env_sky = self.get_sky()
+        self.handle_sky()
 
         light_directional_intensity, light_ambient_intensity = self.get_light()
 
@@ -953,7 +962,6 @@ ${entity}
             player_height=self.scene.f_player_height,
             player_speed=self.scene.f_player_speed,
             show_raycast=raycaster,
-            sky=show_env_sky,
             directional_intensity=light_directional_intensity,
             ambient_intensity=light_ambient_intensity,
             render_shadows=template_render_shadows,
@@ -974,7 +982,6 @@ ${entity}
                 player_height=self.scene.f_player_height,
                 player_speed=self.scene.f_player_speed,
                 show_raycast=raycaster,
-                sky=show_env_sky,
                 directional_intensity=light_directional_intensity,
                 ambient_intensity=light_ambient_intensity,
                 render_shadows=template_render_shadows,
@@ -1015,7 +1022,7 @@ ${entity}
 
         self.create_diretories()
 
-        self.resouce_handling(self.scene.e_ressource_set)
+        self.resouce_handling()
 
         self.export_objects()
 
