@@ -377,44 +377,58 @@ ${entity}
             print("--- DEST [%s] [%s] {%s}" % (self.base_path, dp, p))
             os.makedirs(dp, exist_ok=True)
 
-    def resouce_handling(self):
-        """Check if addon or script for correct path."""
+    def resouce_handling(self, include_set="default"):
+        """Check if addon or script and build correct path."""
         _resources = [
-            [".", "favicon.ico", True],
-            [".", "style.css", True],
-            [constants.PATH_RESOURCES, "sky.jpg", False],
-            [constants.PATH_RESOURCES, "play.png", False],
-            [constants.PATH_RESOURCES, "pause.png", False],
-            [constants.PATH_RESOURCES, "play-skip-back.png", False],
-            [constants.PATH_RESOURCES, "mute.png", False],
-            [constants.PATH_RESOURCES, "volume-low.png", False],
-            [constants.PATH_RESOURCES, "volume-high.png", False],
-            [constants.PATH_MEDIA, "image1.png", False],
-            [constants.PATH_MEDIA, "image2.png", False],
-            [constants.PATH_JAVASCRIPT, "webxr.js", True],
-            [constants.PATH_JAVASCRIPT, "joystick.js", True],
-            [constants.PATH_JAVASCRIPT, "camera-cube-env.js", True],
-            [constants.PATH_ENVIRONMENT, "negx.jpg", True],
-            [constants.PATH_ENVIRONMENT, "negy.jpg", True],
-            [constants.PATH_ENVIRONMENT, "negz.jpg", True],
-            [constants.PATH_ENVIRONMENT, "posx.jpg", True],
-            [constants.PATH_ENVIRONMENT, "posy.jpg", True],
-            [constants.PATH_ENVIRONMENT, "posz.jpg", True],
+            # dest_path, fname, overwrite, include_set
+            [".", "favicon.ico", False, ["default", "minimal"]],
+            [".", "style.css", False, ["default", "minimal"]],
+            [
+                constants.PATH_RESOURCES,
+                "sky.jpg",
+                False,
+                ["default", "minimal", "external"],
+            ],
+            [constants.PATH_RESOURCES, "play.png", False, ["default"]],
+            [constants.PATH_RESOURCES, "pause.png", False, ["default"]],
+            [constants.PATH_RESOURCES, "play-skip-back.png", False, ["default"]],
+            [constants.PATH_RESOURCES, "mute.png", False, ["default"]],
+            [constants.PATH_RESOURCES, "volume-low.png", False, ["default"]],
+            [constants.PATH_RESOURCES, "volume-high.png", False, ["default"]],
+            [constants.PATH_MEDIA, "image1.png", False, ["default"]],
+            [constants.PATH_MEDIA, "image2.png", False, ["default"]],
+            [constants.PATH_JAVASCRIPT, "webxr.js", True, ["default", "minimal"]],
+            [constants.PATH_JAVASCRIPT, "joystick.js", True, ["default", "minimal"]],
+            [
+                constants.PATH_JAVASCRIPT,
+                "camera-cube-env.js",
+                True,
+                ["default", "minimal"],
+            ],
+            [constants.PATH_ENVIRONMENT, "negx.jpg", True, ["default"]],
+            [constants.PATH_ENVIRONMENT, "negy.jpg", True, ["default"]],
+            [constants.PATH_ENVIRONMENT, "negz.jpg", True, ["default"]],
+            [constants.PATH_ENVIRONMENT, "posx.jpg", True, ["default"]],
+            [constants.PATH_ENVIRONMENT, "posy.jpg", True, ["default"]],
+            [constants.PATH_ENVIRONMENT, "posz.jpg", True, ["default"]],
         ]
 
         SRC_RES = os.path.join(self.script_directory, constants.PATH_RESOURCES)
-        for dest_path, fname, overwrite in _resources:
-            if overwrite:
-                shutil.copyfile(
-                    os.path.join(SRC_RES, fname),
-                    os.path.join(self.base_path, dest_path, fname),
-                )
-            else:
-                if not os.path.exists(os.path.join(self.base_path, dest_path, fname)):
+        for dest_path, fname, overwrite, include_set in _resources:
+            if include_set:
+                if overwrite:
                     shutil.copyfile(
                         os.path.join(SRC_RES, fname),
                         os.path.join(self.base_path, dest_path, fname),
                     )
+                else:
+                    if not os.path.exists(
+                        os.path.join(self.base_path, dest_path, fname)
+                    ):
+                        shutil.copyfile(
+                            os.path.join(SRC_RES, fname),
+                            os.path.join(self.base_path, dest_path, fname),
+                        )
 
     ###
     def prepare_entity_str(self, entity_attributes):
@@ -1001,7 +1015,7 @@ ${entity}
 
         self.create_diretories()
 
-        self.resouce_handling()
+        self.resouce_handling(self.scene.e_ressource_set)
 
         self.export_objects()
 
