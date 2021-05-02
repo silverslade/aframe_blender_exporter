@@ -395,9 +395,8 @@ ${entity}
 
             if add_asset:
                 self.assets.append(
-                    '<img id="{id}" src="./{path}/{filename}"></img>'.format(
-                        id=add_asset, path=dest_path, filename=filename
-                    )
+                    '<img id="{id}" src="./{path}/{filename}" crossorigin="anonymous" ></img>'
+                    "".format(id=add_asset, path=dest_path, filename=filename)
                 )
 
     def add_resouce_icons(self):

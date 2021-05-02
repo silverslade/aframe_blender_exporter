@@ -612,12 +612,6 @@ _props = [
     ("float", "f_player_height", "Player Height", "Player Height", 1.7),
     ("bool", "b_raycast", "Enable Raycast", "Enable Raycast"),
     ("bool", "b_show_env_sky", "Show Environment Sky", "Show Environment Sky"),
-    (
-        "str",
-        "s_env_sky_filename",
-        "Sky Texture",
-        "user specified sky-texture. if empty use default one.",
-    ),
     ("bool", "b_settings", "A-Frame settings", "b_settings"),
     ("bool", "b_player", "Player settings", "b_player"),
     ("bool", "b_interactive", "Interactive", "b_interactive"),
