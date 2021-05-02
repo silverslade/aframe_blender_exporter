@@ -402,10 +402,13 @@ ${entity}
         ]
 
         if self.scene.b_show_env_sky:
+            sky_filename = "sky.jpg"
+            if self.scene.s_env_sky_filename:
+                sky_filename = self.scene.s_env_sky_filename
             _resources.append(
                 [
                     constants.PATH_ENVIRONMENT,
-                    "sky.jpg",
+                    sky_filename,
                     False,
                     ["default", "minimal", "external"],
                 ]
@@ -414,8 +417,8 @@ ${entity}
         include_set = self.scene.e_ressource_set
 
         SRC_RES = os.path.join(self.script_directory, constants.PATH_RESOURCES)
-        for dest_path, fname, overwrite, include_set in _resources:
-            if include_set:
+        for dest_path, fname, overwrite, include_in in _resources:
+            if include_set in include_in:
                 if overwrite:
                     shutil.copyfile(
                         os.path.join(SRC_RES, fname),
@@ -859,15 +862,21 @@ ${entity}
         return showcast_shadows, template_render_shadows
 
     def handle_sky(self):
+        # TODO: extract image from world settings:
+        #  bpy.data.worlds["World"].node_tree.nodes["Environment Texture"].image.name
+        # bpy.data.worlds["World"].node_tree.nodes["Environment Texture"].image.filepath_from_user()
         id = "#sky"
         if self.scene.b_show_env_sky:
             self.entities.append(
                 '<a-sky src="{id}" material="" geometry="" rotation="0 90 0"></a-sky>'
                 "".format(id=id)
             )
+            sky_filename = "sky.jpg"
+            if self.scene.s_env_sky_filename:
+                sky_filename = self.scene.s_env_sky_filename
             self.assets.append(
                 '<img id="{id}" src="./{path}/{filename}"></img>'.format(
-                    id=id, path=constants.PATH_ENVIRONMENT, filename="sky.jpg"
+                    id=id, path=constants.PATH_ENVIRONMENT, filename=sky_filename
                 )
             )
         else:
@@ -943,35 +952,15 @@ ${entity}
 
         showcast_shadows, template_render_shadows = self.get_shadow()
 
-        self.handle_sky()
-
         light_directional_intensity, light_ambient_intensity = self.get_light()
 
         showrenderer = self.get_renderer()
 
         self.create_default_template()
         t = Template(bpy.data.texts["index.html"].as_string())
-        s = t.substitute(
-            asset=all_assets,
-            entity=all_entities,
-            stats=showstats,
-            aframe_version=self.scene.s_aframe_version,
-            joystick=showjoystick,
-            vr_controllers=showvr_controllers,
-            cast_shadows=showcast_shadows,
-            player_height=self.scene.f_player_height,
-            player_speed=self.scene.f_player_speed,
-            show_raycast=raycaster,
-            directional_intensity=light_directional_intensity,
-            ambient_intensity=light_ambient_intensity,
-            render_shadows=template_render_shadows,
-            renderer=showrenderer,
-        )
-        s2 = None
-        if self.scene.s_extra_output:
-            self.create_default_extra_template(self.scene.s_extra_output)
-            t2 = Template(bpy.data.texts[self.scene.s_extra_output].as_string())
-            s2 = t2.substitute(
+        s = ""
+        try:
+            s = t.substitute(
                 asset=all_assets,
                 entity=all_entities,
                 stats=showstats,
@@ -987,6 +976,31 @@ ${entity}
                 render_shadows=template_render_shadows,
                 renderer=showrenderer,
             )
+        except KeyError as e:
+            print("Template substitute error: '{}'".format(e))
+        s2 = None
+        if self.scene.s_extra_output:
+            self.create_default_extra_template(self.scene.s_extra_output)
+            t2 = Template(bpy.data.texts[self.scene.s_extra_output].as_string())
+            try:
+                s2 = t2.substitute(
+                    asset=all_assets,
+                    entity=all_entities,
+                    stats=showstats,
+                    aframe_version=self.scene.s_aframe_version,
+                    joystick=showjoystick,
+                    vr_controllers=showvr_controllers,
+                    cast_shadows=showcast_shadows,
+                    player_height=self.scene.f_player_height,
+                    player_speed=self.scene.f_player_speed,
+                    show_raycast=raycaster,
+                    directional_intensity=light_directional_intensity,
+                    ambient_intensity=light_ambient_intensity,
+                    render_shadows=template_render_shadows,
+                    renderer=showrenderer,
+                )
+            except KeyError as e:
+                print("Template substitute error: '{}'".format(e))
             s2 = self.handle_magic_comment(s2)
         return s, s2
 
@@ -1025,6 +1039,8 @@ ${entity}
         self.resouce_handling()
 
         self.export_objects()
+
+        self.handle_sky()
 
         html_site_content, extra_output_content = self.fill_template()
 
