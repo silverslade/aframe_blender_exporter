@@ -977,7 +977,7 @@ ${entity}
                 renderer=showrenderer,
             )
         except KeyError as e:
-            print("Template substitute error: '{}'".format(e))
+            print("Template substitute error: no value for Key {}.".format(e))
         s2 = None
         if self.scene.s_extra_output:
             self.create_default_extra_template(self.scene.s_extra_output)
@@ -1000,7 +1000,7 @@ ${entity}
                     renderer=showrenderer,
                 )
             except KeyError as e:
-                print("Template substitute error: '{}'".format(e))
+                print("Template substitute error: no value for Key {}.".format(e))
             s2 = self.handle_magic_comment(s2)
         return s, s2
 
