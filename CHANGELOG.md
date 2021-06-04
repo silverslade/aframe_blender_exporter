@@ -3,7 +3,8 @@
 ## TODO
 - click to show/hide a 3D object
 - click to toogle a 3D object
-- 
+- export in a single 3D mesh glTF
+- add Integrated Bake Process similar to [@anfeo](https://github.com/anfeo) 
 
 ## CHANGELOG
 
@@ -12,13 +13,17 @@ All notable changes to this project will be documented in this file.
 - NEW = New Feature
 - FIX = Bug Fix
 
-## [0.0.7] work in progress
+## [0.0.8] - work in progress
+- TBD
+
+## [0.0.7] - 2021-06-04
 
 - [NEW] AFRAME_HTTP_LINK: add a link web text field
 - [NEW] AFRAME_SHOW_HIDE_OBJECT: click to show or hide another 3d object
 - [NEW] UI refactoring
 - [NEW] Added ThreeJS/Aframe Render settings: antialias, colorManagement, physicallyCorrectLights
-- [NEW] Integrated Bake Process thanks to [@anfeo](https://github.com/anfeo)
+- [NEW] Updated to the latest A-frame version (1.2.0)
+- [NEW] Added Custom properties: AFRAME_GEOMETRY, AFRAME_NOGLTF, AFRAME_SRC, AFRAME_TAG
 
 ## [0.0.6] - 2020-08-01
 

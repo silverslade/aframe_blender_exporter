@@ -1,6 +1,6 @@
 '''
 AFRAME Exporter for Blender
-Copyright (c) 2020 Alessandro Schillaci
+Copyright (c) 2021 Alessandro Schillaci
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -209,7 +209,7 @@ def default_template():
 
 class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_idname = "AFRAME_EXPORT_PT_Panel"
-    bl_label = "Aframe Exporter (v 0.0.7p2)"
+    bl_label = "Aframe Exporter (v 0.0.7.b04)"
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -293,7 +293,7 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             row.prop(scene, "s_video", text="")
         row = layout.row(align=True)      
 
-        row.prop(scene, 'b_bake', text= "", icon="TRIA_DOWN" if getattr(scene, 'b_bake') else "TRIA_RIGHT", icon_only=False, emboss=False)
+        '''row.prop(scene, 'b_bake', text= "", icon="TRIA_DOWN" if getattr(scene, 'b_bake') else "TRIA_RIGHT", icon_only=False, emboss=False)
         row.label(text="Bake", icon='NONE')
         if scene.b_bake:
             row = layout.row(align=True)   
@@ -306,7 +306,7 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.operator('aframe.clean', text='4 Clean Lightmaps')            
             #box.separator()         
         row = layout.row(align=True) 
-
+        '''
         row.prop(scene, 'b_bake_lightmap', text= "", icon="TRIA_DOWN" if getattr(scene, 'b_bake_lightmap') else "TRIA_RIGHT", icon_only=False, emboss=False)
         row.label(text="Create Lightmaps", icon='NONE')
         if scene.b_bake_lightmap:
@@ -777,7 +777,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
 
 # ------------------------------------------- REGISTER / UNREGISTER
 _props = [
-    ("str", "s_aframe_version", "A-Frame version", "A-Frame version", "1.0.4" ),
+    ("str", "s_aframe_version", "A-Frame version", "A-Frame version", "1.2.0" ),
     ("bool", "b_stats", "Show Stats", "Enable rendering stats in game" ),
     ("bool", "b_vr_controllers", "Enable VR Controllers (HTC,Quest)", "Enable HTC/Quest Controllers in game", True ),
     ("bool", "b_hands", "Use Hands Models", "Use hands models instead of controllers", True ),

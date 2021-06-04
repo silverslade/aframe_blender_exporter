@@ -6,18 +6,18 @@ The generated sources can be modified manually according to your project needs a
 This is an open source project under MIT terms, so feel free to email me or ask for a pull request, or just offer me a coffe!
 
 <p align="center">
-  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/aframe_exporter_0_0_6.png">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/aframe_exporter_0_0_7.png">
 </p>
 
 ## Features
 
-+ Pure Blender Add-On (tested on Blender 2.83)
++ Pure Blender Add-On (tested on Blender 2.91.2)
 + Simple UI for configuration
 + It exports and creates a new A-Frame project
 + Optimized Pipeline: Model with blender -> export -> test on browser
-+ Use baked Lightmaps generated with [The Lightmapper Add-on](https://github.com/Naxela/The_Lightmapper) by Naxela
 + Use of a A-Frame html template saved inside the blend file (to make a higher customisation)
 + Open Source (MIT)
++ Optional: use baked Lightmaps generated with [The Lightmapper Add-on](https://github.com/Naxela/The_Lightmapper) by Naxela
 
 ## Changelog & todo
 
@@ -55,7 +55,7 @@ This Addon manages the following settings (all of them switchable inside the UI)
 + Note: This addon requires the glTF Exporter 2.0 (Add-on version v1.2.75)
 + Note: If you want to use baked Lightmaps, it requires the Lightmapper Add-on, [The Lightmapper Add-on](https://github.com/Naxela/The_Lightmapper). You have to install it manually.
 
-## How to use the Addon
+## How to use this A-Frame Blender Exporter
 
 <p align="center">
   <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/main-window.png">
@@ -66,31 +66,38 @@ This Addon manages the following settings (all of them switchable inside the UI)
 + Open the View3D window (`n` key) to show the export window.
 + Set up best settings for your scene
 + Click on `Export to A-Frame project`
-+ Launch a local web server to test your WebVR page: there are several possibilities
++ Launch a local web server to test your WebVR page: there are several possibilities:
     + run the embedded server, click on the `Start Serving` button
-    + run `live-server` (install it with `npm install -g live-server`)
+    + run `live-server` under npm (install it with `npm install -g live-server`)
     + run `python -m SimpleHTTPServer`
 + Customize the 'index.html'-template in the Script-tab for future exports
 + Use `Custom Properties` of blender-objects to control tags/attributes ([example](https://gist.github.com/coderofsalvation/2468dc3dfbaca0520cd65c20dfad7eb8))
 
 For massive exports, 'live-server' could be more useful because it can manage a content auto-refresh.
 
-For better instructions, see the official [project page](https://silverslade.itch.io/a-frame-blender-exporter).
+For further instructions, see the official [project page](https://silverslade.itch.io/a-frame-blender-exporter).
 
 ### Main UI configuration
 
-Main Ui for the current version 0.0.6.
-For a better usability, the add-on is divided in 5 main panels: a-frame, player, interactive/action, bake, exporter.
+Main Ui for the current version 0.0.7.
+For a better usability, the add-on is divided into 6 main panels: 
++ A-frame
++ Renderer
++ Player
++ Interactive/action
++ Create Lightmaps
++ Exporter
+
 
 #### A-Frame Panel
 
 <p align="center">
-  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/aframe_panel.png">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/aframe_panel_0_0_7.png">
 </p>
 
 | Property       | Description      | Default Value                          |
 |----------------|------------------|----------------------------------|
-| A-Frame | A-Frame Version  | `1.0.4` | 
+| A-Frame | A-Frame Version  | `1.2.0` | 
 | Show Stats | Show the A-Frame stats window. For debug purpose.  | `False`| 
 | Show Joystick | Show a icon controller to move player  | `False` | 
 | Enable VR Controllers (HTC, Quest) | Enable Controllers for further inteactions  | `False` | 
@@ -102,10 +109,22 @@ For a better usability, the add-on is divided in 5 main panels: a-frame, player,
 | Ext | with objects reflections | `jpg` | 
 | Cast Shadows | For dynamic lights and shadows.| `False` | 
 
+#### Renderer Panel
+
+<p align="center">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/renderer_panel_0_0_7.png">
+</p>
+
+| Property       | Description      | Default Value                          |
+|----------------|------------------|----------------------------------|
+| Antialiasing | A-Frame's Scene Setting | `True` | 
+| Color Management | A-Frame's Scene Setting | `True` | 
+| Physically Correct Lights | A-Frame's Scene Setting  | `True` | 
+
 #### Player Panel
 
 <p align="center">
-  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/player_panel.png">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/player_panel_0_0_7.png">
 </p>
 
 | Property       | Description      | Default Value                          |
@@ -119,7 +138,7 @@ For a better usability, the add-on is divided in 5 main panels: a-frame, player,
 #### Interactive/Action Panel
 
 <p align="center">
-  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/interactive_panel.png">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/interactive_panel_0_0_7.png">
 </p>
 
 | Property       | Description      | Default Value                          |
@@ -130,10 +149,10 @@ For a better usability, the add-on is divided in 5 main panels: a-frame, player,
 | Add Link Web | Enable html link when clicking on the selected object  |  | 
 | Add Video | set a mp4 video for the selected object  (plane mesh) |  | 
 
-#### Bake Panel
+#### Create Lightmaps Panel
 
 <p align="center">
-  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/bake_panel.png">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/create_lightmaps_0_0_7.png">
 </p>
 
 | Property       | Description      | Default Value                          |
@@ -149,7 +168,7 @@ For a better usability, the add-on is divided in 5 main panels: a-frame, player,
 #### Exporter Panel
 
 <p align="center">
-  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/export_panel.png">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/export_panel_0_0_7.png">
 </p>
 
 | Property       | Description      | Default Value                          |
@@ -183,18 +202,12 @@ But in few minutes you can enjoy a complex baked scene inside A-Frame with just 
 
 # Credits
 
-In collaboration with `Andrea Rotondo`, a VR Expert since 1998
-informations and contacs: 
-+ rotondo.andrea@gmail.com
-+ http://virtual-art.it
-+ https://www.facebook.com/wox76
-+ https://www.facebook.com/groups/134106979989778/
-
 ## Contributors
-
++ Gltf Exporter Collaboration - [@AndreaRotondo](http://virtual-art.it)
 + Code Refactoring - [@fsoft72](https://github.com/fsoft72)
 + HTTP Embedded Server - [@msfeldstein](https://github.com/msfeldstein)
 + embedded index.html template - [@coderofsalvation](https://github.com/coderofsalvation)
++ PNG fix code - [@jure](https://github.com/jure)
 
 ## Third Party Components
 This Addon Uses the following 3rd Party Software (or their integration/modification):
@@ -218,7 +231,7 @@ In this case, drop me a line.
 # License
 The MIT License (MIT)
 
-Copyright (c) 2020 Alessandro Schillaci
+Copyright (c) 2021 Alessandro Schillaci
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
