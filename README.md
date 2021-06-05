@@ -203,7 +203,7 @@ But in few minutes you can enjoy a complex baked scene inside A-Frame with just 
 # Credits
 
 ## Contributors
-+ Gltf Exporter Collaboration - [@AndreaRotondo](http://virtual-art.it)
++ Gltf Exporter & Collaboration - [@AndreaRotondo](http://virtual-art.it)
 + Code Refactoring - [@fsoft72](https://github.com/fsoft72)
 + HTTP Embedded Server - [@msfeldstein](https://github.com/msfeldstein)
 + embedded index.html template - [@coderofsalvation](https://github.com/coderofsalvation)
