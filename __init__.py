@@ -60,7 +60,7 @@ bl_info = {
     "author" : "Alessandro Schillaci",
     "description" : "Blender Exporter to AFrame WebVR application",
     "blender" : (2, 83, 0),
-    "version" : (0, 0, 7),
+    "version" : (0, 0, 8),
     "location" : "View3D",
     "warning" : "",
     "category" : "3D View"
@@ -99,6 +99,8 @@ AFRAME_VIDEO_STREAM = "AFRAME_VIDEO_STREAM"
 assets = []
 entities = []
 lights = []
+blender_lights = []
+final_lights = ""
 showstats = ""
 
 # Need to subclass SimpleHTTPRequestHandler so we can serve cache-busting headers
@@ -195,8 +197,7 @@ def default_template():
             </a-entity>
 
             <!-- Lights -->
-            <a-entity light="intensity: ${directional_intensity}; castShadow: ${cast_shadows}; shadowBias: -0.001; shadowCameraFar: 501.02; shadowCameraBottom: 12; shadowCameraFov: 101.79; shadowCameraNear: 0; shadowCameraTop: -5; shadowCameraRight: 10; shadowCameraLeft: -10; shadowRadius: 2" position="1.36586 7.17965 1"></a-entity>
-            <a-entity light="type: ambient; intensity: ${ambient_intensity}"></a-entity>
+            ${lights}
 
             <!-- Sky -->
             ${sky}
@@ -209,7 +210,7 @@ def default_template():
 
 class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_idname = "AFRAME_EXPORT_PT_Panel"
-    bl_label = "Aframe Exporter (v 0.0.7)"
+    bl_label = "Aframe Exporter (v 0.0.8b01)"
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -242,6 +243,7 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.prop(scene, "s_cubemap_ext")      
             #col.prop(scene, "b_blender_lights")
             box.prop(scene, "b_cast_shadows")
+            box.prop(scene, "b_use_default_lights")
             box.separator()
         row = layout.row(align=True) 
         row.prop(scene, 'b_renderer', text= "", icon="TRIA_DOWN" if getattr(scene, 'b_renderer') else "TRIA_RIGHT", icon_only=False, emboss=False)
@@ -684,6 +686,36 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                 obj.select_set(state=False)
                 exported_obj+=1
 
+        # Loop the Lamps
+        print('[LAMPS] Searching for lamps in scene')
+        lamp_types = ['LIGHT']
+        blender_lights = []
+        for obj in bpy.data.objects:
+#            print(obj.name, ' = ', obj.type)
+            if obj.type in lamp_types:
+                print(obj.name, obj.data.type, obj.data.color, obj.data.distance, obj.data.cutoff_distance, str(location.x)+" "+str(location.z)+" "+str(-location.y))    
+                distance = str(obj.data.distance)
+                hex_color = to_hex(obj.data.color)
+                print("color = "+hex_color)
+                #default light type
+                light_type = "directional"
+                if obj.data.type == "POINT":
+                    light_type = "point"
+                elif obj.data.type == "SUN":
+                    light_type = "directional"
+                elif obj.data.type == "SPOT":
+                    light_type = "spot"
+                light_position = str(obj.location.x)+" "+str(obj.location.z)+" "+str(-obj.location.y)                    
+                cutoff_distance = str(obj.data.cutoff_distance)
+                intensity = str(1.0)
+                if scene.b_cast_shadows:
+                    cast_shadows = "true"
+                else:                     
+                    cast_shadows = "false"
+                blender_lights.append('\n\t\t\t<a-entity position="'+light_position+'" light="castShadow:'+str(cast_shadows)+'; color:'+hex_color+'; distance:'+cutoff_distance+'; type:'+light_type+'; intensity:'+intensity+'; shadowBias: -0.001; shadowCameraFar: 501.02; shadowCameraBottom: 12; shadowCameraFov: 101.79; shadowCameraNear: 0; shadowCameraTop: -5; shadowCameraRight: 10; shadowCameraLeft: -10; shadowRadius: 2;"></a-entity>')
+        print(blender_lights)
+        # Loop the Lamps
+
         bpy.ops.object.select_all(action='DESELECT')
 
         # Templating ------------------------------
@@ -741,6 +773,15 @@ class AframeExport_OT_Operator(bpy.types.Operator):
             light_directional_intensity = "1.0"
             light_ambient_intensity = "1.0"
 
+        if scene.b_use_default_lights:
+            final_lights = '<a-entity light="intensity: '+ light_directional_intensity+'; castShadow: '+showcast_shadows+'; shadowBias: -0.001; shadowCameraFar: 501.02; shadowCameraBottom: 12; shadowCameraFov: 101.79; shadowCameraNear: 0; shadowCameraTop: -5; shadowCameraRight: 10; shadowCameraLeft: -10; shadowRadius: 2" position="1.36586 7.17965 1"></a-entity>\n\t\t\t<a-entity light="type: ambient; intensity: '+light_ambient_intensity+'"></a-entity>'
+            print("final lights="+final_lights)
+        else:
+            templights = ""
+            for x in blender_lights:
+                templights += x           
+            final_lights = templights
+
         #Renderer
         showrenderer = 'renderer="antialias: '+str(scene.b_aa).lower()+'; colorManagement: '+str(scene.b_colorManagement).lower()+'; physicallyCorrectLights: '+str(scene.b_physicallyCorrectLights).lower()+';"'
 
@@ -758,9 +799,8 @@ class AframeExport_OT_Operator(bpy.types.Operator):
             player_speed=scene.f_player_speed,
             show_raycast=raycaster,
             sky=show_env_sky,
-            directional_intensity=light_directional_intensity,
-            ambient_intensity=light_ambient_intensity,
             render_shadows=template_render_shadows,
+            lights=final_lights,
             renderer=showrenderer)
 
 
@@ -788,6 +828,7 @@ _props = [
     ("str", "s_cubemap_ext", "Ext", "Image file extension", "jpg" ),
     ("bool", "b_blender_lights", "Export Blender Lights", "Export Blenedr Lights or use Aframe default ones" ),
     ("bool", "b_cast_shadows", "Cast Shadows", "Cast and Receive Shadows" ),
+    ("bool", "b_use_default_lights", "Don't export Blender lights", "Use Default Lights - don't export blender lights" ),
     ("bool", "b_lightmaps", "Use Lightmaps as Occlusion (GlTF Settings)", "GLTF Models don\'t have lightmaps: turn on this option will save lightmaps to Ambient Occlusion in the GLTF models" ),
     ("float", "f_player_speed", "Player Speed", "Player Speed", 0.1 ),
     ("float", "f_raycast_length", "Raycast Length","Raycast lenght to interact with objects", 10.0 ),
@@ -962,3 +1003,6 @@ def unregister():
 # to test the add-on without having to install it.
 if __name__ == "__main__":
     register()
+
+def to_hex(c):
+    return '#%02x%02x%02x' % (int(c.r*255),int(c.g*255),int(c.b*255))
