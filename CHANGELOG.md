@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file.
 - NEW = New Feature
 - FIX = Bug Fix
 
-## [0.0.8] - work in progress
+## [0.0.8] - 2021-06-15
 - [NEW] Export blender lights
 - [NEW] Export scene as single glTF mesh file
 - [NEW] index.html template is reset after enabling the add-on (to be sure it's the latest version)
