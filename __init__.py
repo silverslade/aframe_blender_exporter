@@ -1000,10 +1000,10 @@ def register():
         if p [ 0 ] == 'float': _reg_float ( scn, * p [ 1 : ] )
 
     # deletes intex.html template embeded file
-    for t in bpy.data.texts:
-        if (t.name == 'index.html'):
-            print(t.name)
-            bpy.data.texts.remove(t)
+    #for t in bpy.data.texts:
+    #    if (t.name == 'index.html'):
+    #        print(t.name)
+    #        bpy.data.texts.remove(t)
 
 
 def unregister():
