@@ -3,7 +3,6 @@
 ## TODO
 - click to show/hide a 3D object
 - click to toogle a 3D object
-- export in a single 3D mesh glTF
 - add Integrated Bake Process similar to [@anfeo](https://github.com/anfeo) 
 
 ## CHANGELOG
@@ -14,7 +13,9 @@ All notable changes to this project will be documented in this file.
 - FIX = Bug Fix
 
 ## [0.0.8] - work in progress
-- TBD
+- [NEW] Export blender lights
+- [NEW] Export scene as single glTF mesh file
+- [NEW] index.html template is reset after enabling the add-on (to be sure it's the latest version)
 
 ## [0.0.7] - 2021-06-04
 

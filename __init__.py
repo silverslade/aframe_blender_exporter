@@ -21,7 +21,6 @@ freely, subject to the following restrictions:
 
 '''
 In collaboration with Andrea Rotondo, VR Expert since 1998
-informations and contacs:
 http://virtual-art.it - rotondo.andrea@gmail.com
 https://www.facebook.com/wox76
 https://www.facebook.com/groups/134106979989778/
@@ -230,6 +229,7 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
         if scene.b_settings:
             row = layout.row(align=True)
             box = row.box()
+            #box.alignment = 'EXPAND'
             box.prop(scene, "s_aframe_version")
             box.prop(scene, "b_stats")
             box.prop(scene, "b_joystick")
@@ -333,6 +333,7 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box = row.box()            
             box.prop(scene, "s_project_name")
             box.prop(scene, "export_path")
+            box.prop(scene, "b_export_single_model")
             box.operator('aframe.clear_asset_dir', text='Clear Assets Directory')
 
         row = layout.row(align=True)       
@@ -574,117 +575,136 @@ class AframeExport_OT_Operator(bpy.types.Operator):
         for file in lightmap_files:
             print("[LIGHTMAP] Found Lightmap file: "+file)
 
-        for obj in bpy.data.objects:
-            if obj.type not in exclusion_obj_types:
-                print("[AFRAME EXPORTER] loop object "+ obj.name)
-                bpy.ops.object.select_all(action='DESELECT')
-                obj.select_set(state=True)
-                bpy.context.view_layer.objects.active = obj
-                #bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
-                bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
-                location = obj.location.copy()
-                rotation = obj.rotation_euler.copy()
-                
-                bpy.ops.object.location_clear()
-                actualposition = str(location.x)+" "+str(location.z)+" "+str(-location.y)
-                actualscale = str(scalefactor*bpy.data.objects[obj.name].scale.x)+" "+str(scalefactor*bpy.data.objects[obj.name].scale.y)+" "+str(scalefactor*bpy.data.objects[obj.name].scale.z)
-                #pi = 22.0/7.0
-                #actualrotation = str(((bpy.data.objects[obj.name].rotation_euler.x) / (2 * pi) * 360) - 90) +" " + str(((bpy.data.objects[obj.name].rotation_euler.z) / (2 * pi) * 360)-0) + " " + str(((bpy.data.objects[obj.name].rotation_euler.y) / (2 * pi) * 360)+90)
-                #actualrotation = str(bpy.data.objects[obj.name].rotation_euler.x) +" " + str(bpy.data.objects[obj.name].rotation_euler.z)+ " " + str(bpy.data.objects[obj.name].rotation_euler.y)
-                #actualrotation = str(math.degrees(-89.99+bpy.data.objects[obj.name].rotation_euler.x)) +" " + str(90+math.degrees(bpy.data.objects[obj.name].rotation_euler.y))+ " " + str(-90+math.degrees(bpy.data.objects[obj.name].rotation_euler.z))
-                #actualrotation = str(math.degrees(rotation.x))+" "+str(math.degrees(rotation.z))+" "+str(math.degrees(-rotation.y))    
-                actualrotation = "0 "+str(math.degrees(rotation.z))+" 0"    
+        # ONE SINGLE MESH
+        # Note: with a single mesh you can't add interactions
+        if scene.b_export_single_model:
+            print("[AFRAME EXPORTER] Exporting one single global mesh")
+            if scene.b_cast_shadows:
+                single_cast_shadows = "true"
+            else:                     
+                single_cast_shadows = "false"
+            entities.append('\n\t\t\t<a-entity id="#MainMesh" gltf-model="#MainMesh" scale="1 1 1" visible="true" shadow="cast: '+single_cast_shadows+'"></a-entity>')
+            assets.append('\n\t\t\t\t<a-asset-item id="MainMesh" src="./assets/MainMesh.gltf'+'"></a-asset-item>')
+            bpy.ops.object.select_all(action='SELECT')
+            filename = os.path.join ( DEST_RES, PATH_ASSETS, "MainMesh" ) # + '.glft' )
+#            bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True)
+#            obj.select_set(state=True)
+            bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True, export_texcoords = True, export_normals = True, export_draco_mesh_compression_enable = False, export_draco_mesh_compression_level = 6, export_draco_position_quantization = 14, export_draco_normal_quantization = 10, export_draco_texcoord_quantization = 12, export_draco_generic_quantization = 12,export_tangents = True, export_materials = 'EXPORT', export_colors = True, export_extras = True, export_yup = True, export_apply = True, export_animations = True, export_frame_range = True, export_frame_step = 1, export_force_sampling = True, export_displacement = True)
+            bpy.ops.object.select_all(action='DESELECT')
+        else:
+            # MULTI MESH EXPORTING
+            for obj in bpy.data.objects:
+                if obj.type not in exclusion_obj_types:
+                    print("[AFRAME EXPORTER] loop object "+ obj.name)
+                    bpy.ops.object.select_all(action='DESELECT')
+                    obj.select_set(state=True)
+                    bpy.context.view_layer.objects.active = obj
+                    #bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
+                    bpy.ops.object.origin_set(type='ORIGIN_GEOMETRY')
+                    location = obj.location.copy()
+                    rotation = obj.rotation_euler.copy()
                     
-                # custom aframe code read from CUSTOM PROPERTIES
-                reflections = ""
-                animation = ""
-                link = ""
-                baked = ""
-                custom = ""
-                toggle = ""
-                video = False
-                image = False
-                tag = "entity"
-                gltf_model = 'gltf-model="#'+obj.name+'"' 
+                    bpy.ops.object.location_clear()
+                    actualposition = str(location.x)+" "+str(location.z)+" "+str(-location.y)
+                    actualscale = str(scalefactor*bpy.data.objects[obj.name].scale.x)+" "+str(scalefactor*bpy.data.objects[obj.name].scale.y)+" "+str(scalefactor*bpy.data.objects[obj.name].scale.z)
+                    #pi = 22.0/7.0
+                    #actualrotation = str(((bpy.data.objects[obj.name].rotation_euler.x) / (2 * pi) * 360) - 90) +" " + str(((bpy.data.objects[obj.name].rotation_euler.z) / (2 * pi) * 360)-0) + " " + str(((bpy.data.objects[obj.name].rotation_euler.y) / (2 * pi) * 360)+90)
+                    #actualrotation = str(bpy.data.objects[obj.name].rotation_euler.x) +" " + str(bpy.data.objects[obj.name].rotation_euler.z)+ " " + str(bpy.data.objects[obj.name].rotation_euler.y)
+                    #actualrotation = str(math.degrees(-89.99+bpy.data.objects[obj.name].rotation_euler.x)) +" " + str(90+math.degrees(bpy.data.objects[obj.name].rotation_euler.y))+ " " + str(-90+math.degrees(bpy.data.objects[obj.name].rotation_euler.z))
+                    #actualrotation = str(math.degrees(rotation.x))+" "+str(math.degrees(rotation.z))+" "+str(math.degrees(-rotation.y))    
+                    actualrotation = "0 "+str(math.degrees(rotation.z))+" 0"    
+                        
+                    # custom aframe code read from CUSTOM PROPERTIES
+                    reflections = ""
+                    animation = ""
+                    link = ""
+                    baked = ""
+                    custom = ""
+                    toggle = ""
+                    video = False
+                    image = False
+                    tag = "entity"
+                    gltf_model = 'gltf-model="#'+obj.name+'"' 
 
-                # export gltf
-                print(obj.type)
-                if obj.type == 'MESH' or obj.type == 'EMPTY':
-                    if obj.type == 'EMPTY':
-                        gltf_model = ''
-                    #print(obj.name,"custom properties:")
-                    for K in obj.keys():
-                        if K not in '_RNA_UI':
-                            #print( "\n", K , "-" , obj[K], "\n" )
-                            if K == "AFRAME_CUBEMAP" and scene.b_cubemap:
-                                if scene.b_camera_cube:
-                                    reflections = ' geometry="" camera-cube-env="distance: 500; resolution: 512; repeat: true; interval: 400" '
-                                else:
-                                    reflections = ' geometry="" cube-env-map="path: '+scene.s_cubemap_path+'; extension: '+scene.s_cubemap_ext+'; reflectivity: 0.99;" '
-                            elif K == "AFRAME_ANIMATION":
-                                animation = ' animation= "'+obj[K]+'" '
-                            elif K == "AFRAME_HTTP_LINK":
-                                #link = ' link="href: '+obj[K]+'" class="clickable" '
-                                link = ' link-handler="target: '+obj[K]+'" class="clickable" '
-                            elif K == "AFRAME_VIDEO":
-                                #print("--------------- pos " + actualposition)
-                                #print("--------------- rot " + actualrotation)
-                                #print("--------------- scale " + actualscale)                                
-                                #filename = os.path.join ( DEST_RES, PATH_ASSETS, obj.name ) # + '.glft' )
-                                #bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True)
-                                #assets.append('\n\t\t\t\t<a-asset-item id="'+obj.name+'" src="./assets/'+obj.name + '.gltf'+'"></a-asset-item>')                                
-                                assets.append('\n\t\t\t\t<video id="video_'+str(videocount)+'" loop="true" autoplay="true" src="./media/'+obj[K]+'"></video>')
-                                entities.append('\n\t\t\t<a-video id="#v_'+str(videocount)+'" src="#video_'+str(videocount)+'" width="1" height="1" scale="'+actualscale+'" position="'+actualposition+'" rotation="'+actualrotation+'" visible="true" shadow="cast: false" '+animation+link+'></a-video>')
-                                #entities.append('\n\t\t\t<a-video id="#v_'+str(videocount)+'" src="#video_'+str(videocount)+'" width="'+str(bpy.data.objects[obj.name].scale.x)+'" height="'+str(bpy.data.objects[obj.name].scale.y)+'" scale="1 1 1" position="'+actualposition+'" rotation="'+actualrotation+'" visible="true" shadow="cast: false" '+animation+link+'></a-video>')
-                                #entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" gltf-model="#'+obj.name+'" material="src: #video_'+str(videocount)+'" scale="'+actualscale+'" rotation="'+actualrotation+'" position="'+actualposition+'"></a-entity>')
-                                video = True
-                                videocount = videocount +1
-                            elif K == "AFRAME_IMAGES":
-                                #print(".....images")
-                                image = True
-                                imagecount = imagecount +1
-                                #load K
-                                #json_images = '{"1": "image1.jpg", "2": "image2.jpg"}'
-                                json_images = obj[K]
-                                json_dictionary = json.loads(json_images)
-                                for key in json_dictionary:
-                                    #print(key, ":", json_dictionary[key])
-                                    assets.append('\n\t\t\t\t<img id="image_'+key+'" src="./media/'+json_dictionary[key]+'"></img>')
-                                entities.append('\n\t\t\t<a-image images-handler id="#i_'+str(imagecount)+'" src="#image_'+key+'" class="clickable" width="1" height="1" scale="'+actualscale+'" position="'+actualposition+'" rotation="'+actualrotation+'" visible="true" shadow="cast: false"></a-image>')
-                            elif K == "AFRAME_SHOW_HIDE_OBJECT":
-                                toggle = ' toggle-handler="target: #'+obj[K]+';" class="clickable" '
-                            elif K == "AFRAME_TAG":
-                                tag = obj[K]
-                            elif K == "AFRAME_NOGLTF":
-                                gltf_model = ""
-                            elif K.startswith('AFRAME_'):
-                                attr   = K.split("AFRAME_")[1].lower()
-                                custom = custom+' '+attr+'="'+str(obj[K])+'"'
+                    # export gltf
+                    print(obj.type)
+                    if obj.type == 'MESH' or obj.type == 'EMPTY':
+                        if obj.type == 'EMPTY':
+                            gltf_model = ''
+                        #print(obj.name,"custom properties:")
+                        for K in obj.keys():
+                            if K not in '_RNA_UI':
+                                #print( "\n", K , "-" , obj[K], "\n" )
+                                if K == "AFRAME_CUBEMAP" and scene.b_cubemap:
+                                    if scene.b_camera_cube:
+                                        reflections = ' geometry="" camera-cube-env="distance: 500; resolution: 512; repeat: true; interval: 400" '
+                                    else:
+                                        reflections = ' geometry="" cube-env-map="path: '+scene.s_cubemap_path+'; extension: '+scene.s_cubemap_ext+'; reflectivity: 0.99;" '
+                                elif K == "AFRAME_ANIMATION":
+                                    animation = ' animation= "'+obj[K]+'" '
+                                elif K == "AFRAME_HTTP_LINK":
+                                    #link = ' link="href: '+obj[K]+'" class="clickable" '
+                                    link = ' link-handler="target: '+obj[K]+'" class="clickable" '
+                                elif K == "AFRAME_VIDEO":
+                                    #print("--------------- pos " + actualposition)
+                                    #print("--------------- rot " + actualrotation)
+                                    #print("--------------- scale " + actualscale)                                
+                                    #filename = os.path.join ( DEST_RES, PATH_ASSETS, obj.name ) # + '.glft' )
+                                    #bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True)
+                                    #assets.append('\n\t\t\t\t<a-asset-item id="'+obj.name+'" src="./assets/'+obj.name + '.gltf'+'"></a-asset-item>')                                
+                                    assets.append('\n\t\t\t\t<video id="video_'+str(videocount)+'" loop="true" autoplay="true" src="./media/'+obj[K]+'"></video>')
+                                    entities.append('\n\t\t\t<a-video id="#v_'+str(videocount)+'" src="#video_'+str(videocount)+'" width="1" height="1" scale="'+actualscale+'" position="'+actualposition+'" rotation="'+actualrotation+'" visible="true" shadow="cast: false" '+animation+link+'></a-video>')
+                                    #entities.append('\n\t\t\t<a-video id="#v_'+str(videocount)+'" src="#video_'+str(videocount)+'" width="'+str(bpy.data.objects[obj.name].scale.x)+'" height="'+str(bpy.data.objects[obj.name].scale.y)+'" scale="1 1 1" position="'+actualposition+'" rotation="'+actualrotation+'" visible="true" shadow="cast: false" '+animation+link+'></a-video>')
+                                    #entities.append('\n\t\t\t<a-entity id="#'+obj.name+'" gltf-model="#'+obj.name+'" material="src: #video_'+str(videocount)+'" scale="'+actualscale+'" rotation="'+actualrotation+'" position="'+actualposition+'"></a-entity>')
+                                    video = True
+                                    videocount = videocount +1
+                                elif K == "AFRAME_IMAGES":
+                                    #print(".....images")
+                                    image = True
+                                    imagecount = imagecount +1
+                                    #load K
+                                    #json_images = '{"1": "image1.jpg", "2": "image2.jpg"}'
+                                    json_images = obj[K]
+                                    json_dictionary = json.loads(json_images)
+                                    for key in json_dictionary:
+                                        #print(key, ":", json_dictionary[key])
+                                        assets.append('\n\t\t\t\t<img id="image_'+key+'" src="./media/'+json_dictionary[key]+'"></img>')
+                                    entities.append('\n\t\t\t<a-image images-handler id="#i_'+str(imagecount)+'" src="#image_'+key+'" class="clickable" width="1" height="1" scale="'+actualscale+'" position="'+actualposition+'" rotation="'+actualrotation+'" visible="true" shadow="cast: false"></a-image>')
+                                elif K == "AFRAME_SHOW_HIDE_OBJECT":
+                                    toggle = ' toggle-handler="target: #'+obj[K]+';" class="clickable" '
+                                elif K == "AFRAME_TAG":
+                                    tag = obj[K]
+                                elif K == "AFRAME_NOGLTF":
+                                    gltf_model = ""
+                                elif K.startswith('AFRAME_'):
+                                    attr   = K.split("AFRAME_")[1].lower()
+                                    custom = custom+' '+attr+'="'+str(obj[K])+'"'
 
-                    if video == False and image == False:                        
-                        # check if baked texture is present on filesystem
-                        #images = bpy.data.images
-                        #for img in images:
-                        #    if obj.name+"_baked" in img.name and img.has_data:
-                        #       print("ok")
-                        #       baked = 'light-map-geometry="path: lightmaps/'+img.name+'"'
-                        print("[LIGHTMAP] Searching Lightmap for object ["+obj.name+"_baked"+"]")                        
-                        for file in lightmap_files:
-                            if obj.name+"_baked" in file:
-                                print("[LIGHTMAP] Found lightmap: "+file)
-                                baked = 'light-map-geometry="path: lightmaps/'+file+'; intensity: '+str(scene.f_lightMapIntensity)+'"'
-                            
-                        filename = os.path.join ( DEST_RES, PATH_ASSETS, obj.name ) # + '.glft' )
-                        bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True)
-                        assets.append('\n\t\t\t\t<a-asset-item id="'+obj.name+'" src="./assets/'+obj.name + '.gltf'+'"></a-asset-item>')
-                        if scene.b_cast_shadows:
-                            entities.append('\n\t\t\t<a-'+tag+' id="#'+obj.name+'" '+gltf_model+' scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: true" '+reflections+animation+link+custom+toggle+'></a-'+tag+'>')
-                        else:
-                            entities.append('\n\t\t\t<a-'+tag+' id="#'+obj.name+'" '+gltf_model+' '+baked+' scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: false" '+reflections+animation+link+custom+toggle+'></a-'+tag+'>')
-                # deselect object
-                obj.location = location
-                obj.select_set(state=False)
-                exported_obj+=1
+                        if video == False and image == False:                        
+                            # check if baked texture is present on filesystem
+                            #images = bpy.data.images
+                            #for img in images:
+                            #    if obj.name+"_baked" in img.name and img.has_data:
+                            #       print("ok")
+                            #       baked = 'light-map-geometry="path: lightmaps/'+img.name+'"'
+                            print("[LIGHTMAP] Searching Lightmap for object ["+obj.name+"_baked"+"]")                        
+                            for file in lightmap_files:
+                                if obj.name+"_baked" in file:
+                                    print("[LIGHTMAP] Found lightmap: "+file)
+                                    baked = 'light-map-geometry="path: lightmaps/'+file+'; intensity: '+str(scene.f_lightMapIntensity)+'"'
+                                
+                            filename = os.path.join ( DEST_RES, PATH_ASSETS, obj.name ) # + '.glft' )
+                            #bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True)
+                            bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True, export_texcoords = True, export_normals = True, export_draco_mesh_compression_enable = False, export_draco_mesh_compression_level = 6, export_draco_position_quantization = 14, export_draco_normal_quantization = 10, export_draco_texcoord_quantization = 12, export_draco_generic_quantization = 12,export_tangents = True, export_materials = 'EXPORT', export_colors = True, export_extras = True, export_yup = True, export_apply = True, export_animations = True, export_frame_range = True, export_frame_step = 1, export_force_sampling = True, export_displacement = True)
+                            assets.append('\n\t\t\t\t<a-asset-item id="'+obj.name+'" src="./assets/'+obj.name + '.gltf'+'"></a-asset-item>')
+                            if scene.b_cast_shadows:
+                                entities.append('\n\t\t\t<a-'+tag+' id="#'+obj.name+'" '+gltf_model+' scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: true" '+reflections+animation+link+custom+toggle+'></a-'+tag+'>')
+                            else:
+                                entities.append('\n\t\t\t<a-'+tag+' id="#'+obj.name+'" '+gltf_model+' '+baked+' scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: false" '+reflections+animation+link+custom+toggle+'></a-'+tag+'>')
+                    # deselect object
+                    obj.location = location
+                    obj.select_set(state=False)
+                    exported_obj+=1
 
         # Loop the Lamps
         print('[LAMPS] Searching for lamps in scene')
@@ -693,7 +713,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
         for obj in bpy.data.objects:
 #            print(obj.name, ' = ', obj.type)
             if obj.type in lamp_types:
-                print(obj.name, obj.data.type, obj.data.color, obj.data.distance, obj.data.cutoff_distance, str(location.x)+" "+str(location.z)+" "+str(-location.y))    
+                print(obj.name, obj.data.type, obj.data.color, obj.data.distance, obj.data.cutoff_distance, str(obj.location.x)+" "+str(obj.location.z)+" "+str(-obj.location.y))    
                 distance = str(obj.data.distance)
                 hex_color = to_hex(obj.data.color)
                 print("color = "+hex_color)
@@ -834,6 +854,7 @@ _props = [
     ("float", "f_raycast_length", "Raycast Length","Raycast lenght to interact with objects", 10.0 ),
     ("float", "f_raycast_interval", "Raycast Interval","Raycast Interval to interact with objects", 1500.0 ),
     ("str", "export_path", "Export To","Path to the folder containing the files to import", "C:/Temp/", 'FILE_PATH'),
+    ("bool", "b_export_single_model", "Export to a single glTF model","Export to a single glTF model" ),
     ("str", "s_project_name", "Name", "Project's name","aframe-prj"),
     ("str", "s_output", "output","output export","output"),
     ("bool", "b_use_lightmapper", "Use Lightmapper Add-on","Use Lightmapper for baking" ),
@@ -978,6 +999,13 @@ def register():
         if p [ 0 ] == 'bool': _reg_bool ( scn, * p [ 1 : ] )
         if p [ 0 ] == 'float': _reg_float ( scn, * p [ 1 : ] )
 
+    # deletes intex.html template embeded file
+    for t in bpy.data.texts:
+        if (t.name == 'index.html'):
+            print(t.name)
+            bpy.data.texts.remove(t)
+
+
 def unregister():
     bpy.utils.unregister_class(AframeExportPanel_PT_Panel)
     bpy.utils.unregister_class(AframeBake_OT_Operator)
@@ -998,6 +1026,7 @@ def unregister():
 
     for p in _props:
         del bpy.types.Scene [ p [ 1 ] ]
+
 
 # This allows you to run the script directly from Blender's Text editor
 # to test the add-on without having to install it.
