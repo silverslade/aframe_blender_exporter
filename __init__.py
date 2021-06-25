@@ -29,12 +29,13 @@ https://www.facebook.com/groups/134106979989778/
 '''
 USAGE:
     - create new Blender project
-    - install this addon
-    - add a right managed CUSTOM PROPERTY
+    - install this addon get it here https://silverslade.itch.io/a-frame-blender-exporter
     - open the addon and set your configuration
+    - add a CUSTOM PROPERTY (if needed)
     - click on "Export A-Frame Project" button
     - your project will be saved in the export directory
-    - launch "live-server" (install it with "npm install -g live-server") or "python -m SimpleHTTPServer"
+    - launch "Start Serving" + "Open Preview" (to open a local browser)
+    - You can use others web server: eg. live-server" (install it with "npm install -g live-server") or "python -m SimpleHTTPServer"
 
 AVAILABLE CUSTOM_PROPERTIES:
     - AFRAME_CUBEMAP: if present, set reflections on to the mesh object (metal -> 1, rough -> 0)
@@ -59,7 +60,7 @@ bl_info = {
     "author" : "Alessandro Schillaci",
     "description" : "Blender Exporter to AFrame WebVR application",
     "blender" : (2, 83, 0),
-    "version" : (0, 0, 8),
+    "version" : (0, 0, 9),
     "location" : "View3D",
     "warning" : "",
     "category" : "3D View"
@@ -209,7 +210,7 @@ def default_template():
 
 class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_idname = "AFRAME_EXPORT_PT_Panel"
-    bl_label = "Aframe Exporter (v 0.0.8)"
+    bl_label = "Aframe Exporter (v 0.0.9b01)"
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -1026,6 +1027,12 @@ def unregister():
 
     for p in _props:
         del bpy.types.Scene [ p [ 1 ] ]
+
+    # deletes intex.html template embeded file
+    for t in bpy.data.texts:
+        if (t.name == 'index.html'):
+            print(t.name)
+            bpy.data.texts.remove(t)        
 
 
 # This allows you to run the script directly from Blender's Text editor
