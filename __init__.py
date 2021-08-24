@@ -177,6 +177,8 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.prop(scene, "b_aa")
             box.prop(scene, "b_colorManagement")
             box.prop(scene, "b_physicallyCorrectLights")
+            box.prop(scene, "b_maxCanvasWidth")
+            box.prop(scene, "b_maxCanvasHeight")
             box.separator()
         row = layout.row(align=True)
         row.prop(
@@ -652,6 +654,8 @@ _props = [
         "Physically Correct Lights",
         "PhysicallyCorrectLights",
     ),
+    ("int", "b_maxCanvasWidth", "Max Canvas Width", "MaxCanvasWidth", 1024, -1, 1920*16, -1, 1920),
+    ("int", "b_maxCanvasHeight", "Max Canvas Height", "MaxCanvasHeight", 1024, -1, 1920*16, -1, 1920),
 ]
 
 

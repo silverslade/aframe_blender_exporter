@@ -987,11 +987,19 @@ ${entity}
         showrenderer = (
             'renderer="antialias: '
             + str(self.scene.b_aa).lower()
-            + "; colorManagement: "
+            + "; "
+            + "colorManagement: "
             + str(self.scene.b_colorManagement).lower()
-            + "; physicallyCorrectLights: "
+            + "; "
+            + "physicallyCorrectLights: "
             + str(self.scene.b_physicallyCorrectLights).lower()
-            + ';"'
+            + '; "'
+            + "MaxCanvasWidth: "
+            + str(self.scene.b_maxCanvasWidth)
+            + '; "'
+            + "MaxCanvasHeight: "
+            + str(self.scene.b_maxCanvasHeight)
+            + '; "'
         )
         return showrenderer
 
