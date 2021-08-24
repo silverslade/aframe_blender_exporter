@@ -658,7 +658,7 @@ _props = [
         "int",
         "b_maxCanvasWidth",
         "Max Canvas Width",
-        "MaxCanvasWidth",
+        "-1 = unlimited",
         1024,
         -1,
         1920 * 16,
@@ -669,7 +669,7 @@ _props = [
         "int",
         "b_maxCanvasHeight",
         "Max Canvas Height",
-        "MaxCanvasHeight",
+        "-1 = unlimited",
         1024,
         -1,
         1920 * 16,
@@ -843,6 +843,25 @@ def _reg_float(scene, prop, name, descr, default=0.0):
     )
 
 
+def _reg_int(
+    scene, prop, name, descr, default=1, min=0, max=100, soft_min=0, soft_max=10
+):
+    # https://docs.blender.org/api/blender_python_api_current/bpy.props.html#bpy.props.IntProperty
+    setattr(
+        scene,
+        prop,
+        bpy.props.IntProperty(
+            name=name,
+            description=descr,
+            default=default,
+            min=min,
+            max=max,
+            soft_min=soft_min,
+            soft_max=soft_max,
+        ),
+    )
+
+
 def register():
     scn = bpy.types.Scene
 
@@ -873,6 +892,8 @@ def register():
             _reg_bool(scn, *p[1:])
         if p[0] == "float":
             _reg_float(scn, *p[1:])
+        if p[0] == "int":
+            _reg_int(scn, *p[1:])
 
     # deletes intex.html template embeded file
     # for t in bpy.data.texts:

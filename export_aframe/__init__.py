@@ -985,21 +985,23 @@ ${entity}
 
     def get_renderer(self):
         showrenderer = (
-            'renderer="antialias: '
+            'renderer="\n            '
+            "antialias: "
             + str(self.scene.b_aa).lower()
-            + "; "
+            + ";\n            "
             + "colorManagement: "
             + str(self.scene.b_colorManagement).lower()
-            + "; "
+            + ";\n            "
             + "physicallyCorrectLights: "
             + str(self.scene.b_physicallyCorrectLights).lower()
-            + '; "'
-            + "MaxCanvasWidth: "
+            + ";\n            "
+            + "maxCanvasWidth: "
             + str(self.scene.b_maxCanvasWidth)
-            + '; "'
-            + "MaxCanvasHeight: "
+            + ";\n            "
+            + "maxCanvasHeight: "
             + str(self.scene.b_maxCanvasHeight)
-            + '; "'
+            + ";\n        "
+            + '"'
         )
         return showrenderer
 
