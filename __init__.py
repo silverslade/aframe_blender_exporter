@@ -654,8 +654,28 @@ _props = [
         "Physically Correct Lights",
         "PhysicallyCorrectLights",
     ),
-    ("int", "b_maxCanvasWidth", "Max Canvas Width", "MaxCanvasWidth", 1024, -1, 1920*16, -1, 1920),
-    ("int", "b_maxCanvasHeight", "Max Canvas Height", "MaxCanvasHeight", 1024, -1, 1920*16, -1, 1920),
+    (
+        "int",
+        "b_maxCanvasWidth",
+        "Max Canvas Width",
+        "MaxCanvasWidth",
+        1024,
+        -1,
+        1920 * 16,
+        -1,
+        1920,
+    ),
+    (
+        "int",
+        "b_maxCanvasHeight",
+        "Max Canvas Height",
+        "MaxCanvasHeight",
+        1024,
+        -1,
+        1920 * 16,
+        -1,
+        1920,
+    ),
 ]
 
 

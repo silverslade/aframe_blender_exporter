@@ -33,44 +33,44 @@ class colors:
     `colors.bold`
     """
 
-    reset = '\033[0m'
-    bold = '\033[01m'
-    disable = '\033[02m'
-    underline = '\033[04m'
-    reverse = '\033[07m'
-    strikethrough = '\033[09m'
-    invisible = '\033[08m'
+    reset = "\033[0m"
+    bold = "\033[01m"
+    disable = "\033[02m"
+    underline = "\033[04m"
+    reverse = "\033[07m"
+    strikethrough = "\033[09m"
+    invisible = "\033[08m"
 
     class fg:
         """Forderground Colors."""
 
-        black = '\033[30m'
-        red = '\033[31m'
-        green = '\033[32m'
-        orange = '\033[33m'
-        blue = '\033[34m'
-        purple = '\033[35m'
-        cyan = '\033[36m'
-        lightgrey = '\033[37m'
-        darkgrey = '\033[90m'
-        lightred = '\033[91m'
-        lightgreen = '\033[92m'
-        yellow = '\033[93m'
-        lightblue = '\033[94m'
-        pink = '\033[95m'
-        lightcyan = '\033[96m'
+        black = "\033[30m"
+        red = "\033[31m"
+        green = "\033[32m"
+        orange = "\033[33m"
+        blue = "\033[34m"
+        purple = "\033[35m"
+        cyan = "\033[36m"
+        lightgrey = "\033[37m"
+        darkgrey = "\033[90m"
+        lightred = "\033[91m"
+        lightgreen = "\033[92m"
+        yellow = "\033[93m"
+        lightblue = "\033[94m"
+        pink = "\033[95m"
+        lightcyan = "\033[96m"
 
     class bg:
         """Background Colors."""
 
-        black = '\033[40m'
-        red = '\033[41m'
-        green = '\033[42m'
-        orange = '\033[43m'
-        blue = '\033[44m'
-        purple = '\033[45m'
-        cyan = '\033[46m'
-        lightgrey = '\033[47m'
+        black = "\033[40m"
+        red = "\033[41m"
+        green = "\033[42m"
+        orange = "\033[43m"
+        blue = "\033[44m"
+        purple = "\033[45m"
+        cyan = "\033[46m"
+        lightgrey = "\033[47m"
 
     @classmethod
     def get_flat_list(cls, obj_dict=None):
@@ -101,9 +101,7 @@ class colors:
                     result.append(attr_value)
                 elif type(attr_value) is type:
                     # print(" TYPE ")
-                    result.extend(
-                        cls.get_flat_list(attr_value.__dict__)
-                    )
+                    result.extend(cls.get_flat_list(attr_value.__dict__))
                 else:
                     # print(" UNKNOWN ")
                     pass
@@ -122,13 +120,13 @@ def filter_ASCII_controlls(data):
 def test_filtering():
     """Test for filter_ASCII_controlls."""
     test_string = (
-        colors.fg.lightblue +
-        "Hello " +
-        colors.fg.green +
-        "World " +
-        colors.fg.orange +
-        ":-)" +
-        colors.reset
+        colors.fg.lightblue
+        + "Hello "
+        + colors.fg.green
+        + "World "
+        + colors.fg.orange
+        + ":-)"
+        + colors.reset
     )
     print("test_string", test_string)
     test_filtered = filter_ASCII_controlls(test_string)
@@ -138,11 +136,11 @@ def test_filtering():
 def print_colored(mode, data, pre_line=""):
     """Print with coloring similar to blenders info area."""
     printcolor = colors.reset
-    if mode == {'INFO'}:
+    if mode == {"INFO"}:
         printcolor = colors.fg.lightblue
-    elif mode == {'WARNING'}:
+    elif mode == {"WARNING"}:
         printcolor = colors.fg.orange
-    elif mode == {'ERROR'}:
+    elif mode == {"ERROR"}:
         printcolor = colors.fg.red
     print("{}{}{}{}".format(str(pre_line), printcolor, data, colors.reset))
 
@@ -152,25 +150,26 @@ def print_blender_console(mode, data, pre_line=""):
     """Print to blenders console area."""
     if bpy:
         message_type = mode.pop()
-        if message_type == 'WARNING':
-            message_type = 'INFO'
-        elif message_type == 'INFO':
-            message_type = 'OUTPUT'
+        if message_type == "WARNING":
+            message_type = "INFO"
+        elif message_type == "INFO":
+            message_type = "OUTPUT"
         else:
-            message_type = 'INFO'
+            message_type = "INFO"
         data = filter_ASCII_controlls(str(data))
         data = filter_ASCII_controlls(str(pre_line)) + data
         for window in bpy.context.window_manager.windows:
             screen = window.screen
             for area in screen.areas:
-                if area.type == 'CONSOLE':
+                if area.type == "CONSOLE":
                     override = {
-                        'window': window,
-                        'screen': screen,
-                        'area': area
+                        "window": window,
+                        "screen": screen,
+                        "area": area,
                     }
                     bpy.ops.console.scrollback_append(
-                        override, text=data, type=message_type)
+                        override, text=data, type=message_type
+                    )
 
 
 def print_console(mode, data, pre_line=""):
