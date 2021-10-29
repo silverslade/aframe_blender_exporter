@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 - [NEW] internal "index.html" template is reset after unregistering the add-on (to be sure it's the latest version)
 - [FIX] Python Code Refactoring, thanks to [@s-light](https://github.com/s-light)
 - [NEW] Added ThreeJS/Aframe Render settings: maxCanvasWidth, maxCanvasHeight, thanks to [@s-light](https://github.com/s-light)
+- [NEW] Added a-sky settings: geometry.segmentsWidth, geometry.segmentsHeight, thanks to [@s-light](https://github.com/s-light)
 
 ## [0.0.8] - 2021-06-15
 - [NEW] Export blender lights
