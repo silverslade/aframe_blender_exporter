@@ -760,6 +760,7 @@ ${entity}
             + " "
             + str(self.scalefactor * bpy.data.objects[obj.name].scale.z)
         )
+        # https://aframe.io/docs/1.2.0/components/rotation.html#sidebar
         # pi = 22.0/7.0
         # actualrotation = (
         #     str(
@@ -817,8 +818,10 @@ ${entity}
         bpy.ops.object.select_all(action="DESELECT")
         obj.select_set(state=True)
         bpy.context.view_layer.objects.active = obj
-        # force rotation_mode to XYZ to be compatible with our export
-        obj.rotation_mode = "XYZ"
+        # first reset rotation_mode to QUATERNION (otherwise it can have buggy side-effects)
+        obj.rotation_mode = "QUATERNION"
+        # force rotation_mode to YXZ to be compatible with our export
+        obj.rotation_mode = "YXZ"
 
         actualposition, actualrotation, actualscale = self.get_object_coordinates(obj)
 
