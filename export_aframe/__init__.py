@@ -817,6 +817,8 @@ ${entity}
         bpy.ops.object.select_all(action="DESELECT")
         obj.select_set(state=True)
         bpy.context.view_layer.objects.active = obj
+        # force rotation_mode to XYZ to be compatible with our export
+        obj.rotation_mode = "XYZ"
 
         actualposition, actualrotation, actualscale = self.get_object_coordinates(obj)
 
