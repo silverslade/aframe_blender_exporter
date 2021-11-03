@@ -484,7 +484,11 @@ class AframeServe_OT_Operator(bpy.types.Operator):
 class AframeExport_OT_Operator(bpy.types.Operator):
     bl_idname = "aframe.export"
     bl_label = "Export to Aframe Project"
-    bl_description = "Export AFrame"
+    bl_description = "Export AFrame\n only possible in Object Mode"
+
+    @classmethod
+    def poll(cls, context):
+        return context.mode == "OBJECT"
 
     def execute(self, content):
         my_exporter = export_aframe.ExportAframe(
