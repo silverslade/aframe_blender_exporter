@@ -589,8 +589,10 @@ _props = [
         "str",
         "s_extra_output_target",
         "Extra Output target",
-        "Export aframe scene to a seccond extra File - specify target folder & name here",
+        "Export aframe scene to a seccond extra File - specify target folder & name here. "
+        "This is Relative to the base export_path.",
         "./ascene.php",
+        "FILE_PATH",
     ),
     (
         "enum",
