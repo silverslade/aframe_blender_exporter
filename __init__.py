@@ -299,7 +299,8 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.prop(scene, "export_path")
             box.prop(scene, "b_export_single_model")
             box.prop(scene, "export_apply_modifiers")
-            box.prop(scene, "s_extra_output")
+            box.prop(scene, "s_extra_output_file")
+            box.prop(scene, "s_extra_output_target")
             box.prop(scene, "e_ressource_set")
             box.operator("aframe.clear_asset_dir", text="Clear Assets Directory")
 
@@ -494,7 +495,6 @@ class AframeExport_OT_Operator(bpy.types.Operator):
         my_exporter = export_aframe.ExportAframe(
             scene=content.scene,
             report=self.report,
-            skiphidden=self.option_skiphidden,
         )
         return my_exporter.export()
 
@@ -580,10 +580,17 @@ _props = [
     ("str", "s_project_name", "Name", "Project's name", "aframe-prj"),
     (
         "str",
-        "s_extra_output",
-        "Extra Output",
-        "Export aframe scene to a seccond extra File - specify name here",
+        "s_extra_output_file",
+        "Extra Output Template File",
+        "Export aframe scene to a seccond extra File - specify file name for template here",
         "ascene.php",
+    ),
+    (
+        "str",
+        "s_extra_output_target",
+        "Extra Output target",
+        "Export aframe scene to a seccond extra File - specify target folder & name here",
+        "./ascene.php",
     ),
     (
         "enum",
@@ -856,7 +863,10 @@ def _reg_enum(scene, prop, items, name, descr, default=""):
         scene,
         prop,
         bpy.props.EnumProperty(
-            items=items, name=name, description=descr, default=default,
+            items=items,
+            name=name,
+            description=descr,
+            default=default,
         ),
     )
 

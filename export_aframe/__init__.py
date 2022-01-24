@@ -40,6 +40,8 @@ class ExportAframe(object):
         # }
         # print("config", self.config)
 
+        # skiphidden=self.option_skiphidden
+
         self.report_obj = report
         self.scene = scene
 
@@ -1087,9 +1089,9 @@ ${entity}
                 ),
             )
         s2 = None
-        if self.scene.s_extra_output:
-            self.create_default_extra_template(self.scene.s_extra_output)
-            t2 = Template(bpy.data.texts[self.scene.s_extra_output].as_string())
+        if self.scene.s_extra_output_file:
+            self.create_default_extra_template(self.scene.s_extra_output_file)
+            t2 = Template(bpy.data.texts[self.scene.s_extra_output_file].as_string())
             try:
                 s2 = t2.substitute(
                     asset=all_assets,
@@ -1111,7 +1113,7 @@ ${entity}
                 self.report(
                     {"ERROR"},
                     "Template substitute error in '{}': no value for Key {}.".format(
-                        self.scene.s_extra_output, e
+                        self.scene.s_extra_output_file, e
                     ),
                 )
             s2 = self.handle_magic_comment(s2)
@@ -1163,9 +1165,18 @@ ${entity}
         with open(os.path.join(self.base_path, constants.PATH_INDEX), "w") as file:
             file.write(html_site_content)
         if extra_output_content:
-            with open(
-                os.path.join(self.base_path, self.scene.s_extra_output), "w"
-            ) as file:
+            extra_output_target_file = self.scene.s_extra_output_file
+            if self.scene.s_extra_output_target:
+                extra_output_target_file = self.scene.s_extra_output_target
+            extra_output_full_path = os.path.join(
+                self.base_path,
+                extra_output_target_file,
+            )
+            print(
+                "[AFRAME EXPORTER] extra_output target path     = "
+                + extra_output_full_path
+            )
+            with open(extra_output_full_path, "w") as file:
                 file.write(extra_output_content)
 
         message = str(self.exported_obj) + " meshes exported"
