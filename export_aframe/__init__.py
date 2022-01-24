@@ -26,7 +26,10 @@ class ExportAframe(object):
     """Export Scene to A-Frame Website."""
 
     def __init__(
-        self, *, scene, report=None,  # this * notation forces named_properties..
+        self,
+        *,
+        scene,
+        report=None,  # this * notation forces named_properties..
     ):
         """Init."""
         super(ExportAframe, self).__init__()
@@ -60,7 +63,10 @@ class ExportAframe(object):
     def report(self, mode, data, pre_line=""):
         """Multi print handling."""
         b_helper.print_multi(
-            mode=mode, data=data, pre_line=pre_line, report=self.report_obj,
+            mode=mode,
+            data=data,
+            pre_line=pre_line,
+            report=self.report_obj,
         )
 
     def create_default_template(self):
@@ -395,7 +401,7 @@ ${entity}
 
             if add_asset:
                 self.assets.append(
-                    '<img id="{id}" src="./{path}/{filename}" crossorigin="anonymous" ></img>'
+                    '<img id="{id}" src="./{path}/{filename}" crossorigin="anonymous" />'
                     "".format(id=add_asset, path=dest_path, filename=filename)
                 )
 
@@ -621,7 +627,7 @@ ${entity}
             # print(key, ":", json_dictionary[key])
             image_src_id = "image_src_{}_{}".format(self.imagecount, key)
             self.assets.append(
-                '\n\t\t\t\t<img id="{}" src="./media/{}"></img>'.format(
+                '\n\t\t\t\t<img id="{}" src="./media/{}"/>'.format(
                     image_src_id, json_dictionary[key]
                 )
             )
@@ -959,7 +965,12 @@ ${entity}
             add_asset = id
             copy_source = full_filepath
             self.add_resouce(
-                dest_path, filename, overwrite, include_in, add_asset, copy_source,
+                dest_path,
+                filename,
+                overwrite,
+                include_in,
+                add_asset,
+                copy_source,
             )
         else:
             self.entities.append(
