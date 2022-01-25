@@ -893,20 +893,25 @@ ${entity}
         # print("magic_comments", magic_comments)
         for magic_comment in magic_comments:
             magic_comment = magic_comment.strip()
+            # magic_comment = magic_comment.decode()
+            print("magic_comment {}".format(magic_comment))
+            # print("magic_comment {}".format(repr(magic_comment)))
             magic_comment_dict = {
                 "raw_content": magic_comment,
                 "attributes": {},
             }
-            print("magic_comment {}".format(repr(magic_comment)))
             # example:
             # >>> magic_comment = r"""replace_search="src=\"./" replace_with="src=\\"~assets/" """
             # >>> magic_comment
             # 'replace_search="src=\\"./" replace_with="src=\\\\"~assets/" '
-            regex_split_attributes = re.compile(r"""(\S+)=["](\S+)["]""")
+            regex_split_attributes = re.compile(r"""\s*?(\S+)="(\S+)"\s*?""")
             mc_attribute_groups = regex_split_attributes.findall(magic_comment)
             print("mc_attribute_groups", mc_attribute_groups)
-            for group in mc_attribute_groups:
-                magic_comment_dict["attributes"][group[0]] = group[1]
+            for item_name, item_value in mc_attribute_groups:
+                # decode escape sequences like \" to "
+                item_name = item_name.encode().decode("unicode-escape")
+                item_value = item_value.encode().decode("unicode-escape")
+                magic_comment_dict["attributes"][item_name] = item_value
             magic_comments_list.append(magic_comment_dict)
         return magic_comments_list
 
@@ -916,15 +921,22 @@ ${entity}
         return result_text
 
     def magic_comment_handle__replace_search(self, mc_attributes, input_text):
+        print("magic_comment_handle__replace_search:")
         replace_search = mc_attributes["replace_search"]
         replace_with = mc_attributes["replace_with"]
+        print("  replace_search = ", repr(replace_search))
+        print("  replace_with = ", repr(replace_with))
+
+        # test text
+        # input_text = """<a-asset-item id="Cube" src="./assets/Cube.gltf" ></a-asset-item>"""
         result_text = input_text.replace(replace_search, replace_with)
-        result_text = input_text
+        print("  → replaced {} occurencies".format(input_text.count(replace_search)))
         return result_text
 
     def magic_comment_handle(self, magic_comment, input_text):
         result_text = input_text
         mc_attributes = magic_comment["attributes"]
+        print("mc_attributes = {}".format(repr(mc_attributes)))
         if len(mc_attributes) > 0:
             if "src_prepend" in mc_attributes:
                 result_text = self.magic_comment_handle__src_prepend(
@@ -942,11 +954,11 @@ ${entity}
 
     def handle_magic_comment(self, input_text):
         magic_comments_list = self.magic_comments_find_and_parse(input_text)
-        # print("magic_comments_list:")
-        # for mc in magic_comments_list:
-        #     print(" - {}".format(repr(mc["raw_content"])))
-        #     for item in mc["attributes"].items():
-        #         print("   - {}".format(item))
+        print("magic_comments_list:")
+        for mc in magic_comments_list:
+            print(" - {}".format(repr(mc["raw_content"])))
+            for item in mc["attributes"].items():
+                print("   - {}".format(item))
         for magic_comment in magic_comments_list:
             input_text = self.magic_comment_handle(magic_comment, input_text)
         return input_text
