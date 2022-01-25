@@ -902,40 +902,10 @@ ${entity}
             # >>> magic_comment = r"""replace_search="src=\"./" replace_with="src=\\"~assets/" """
             # >>> magic_comment
             # 'replace_search="src=\\"./" replace_with="src=\\\\"~assets/" '
-
-            # regex_split_attributes = re.compile(
-            #     # r"""(\S+)=["']?((?:.(?!["']?\s+(?:\S+)=|\s*\/?[>"']))+.)["']?"""
-            #     r'''(\S+)="((?:.(?!"\s+(?:\S+)=|\s*\/?[>"']))+.)"'''
-            #     r"""(\S+)="?((?:.(?!"?\s+(?:\S+)=|\s*"))+.)"?"""
-            # )
-            # r"""(\S+)="?((?:.(?!"?\s+(?:\S+)=|\s*"))+.)"?"""
-            # r"""(\S+)='?((?:.(?!'?\s+(?:\S+)=|\s*'))+.)'?"""
-            # regex_split_attributes = re.compile(
-            #     r"""(?P<name>\S+)=["](?P<value>\S+)["]"""
-            # )
-            # mc_attributes_matchobj = regex_split_attributes.match(magic_comment)
-            # # print("regex_split_attributes", regex_split_attributes)
-            # # print("mc_attributes_matchobj", mc_attributes_matchobj)
-            # if mc_attributes_matchobj:
-            #     mc_attributes_raw = mc_attributes_matchobj.groups()
-            #     print("mc_attributes_raw", mc_attributes_raw)
-            #     repr(mc_attributes_raw)
-            #     magic_comment_dict["attributes"].append(
-            #         {
-            #             "name": mc_attributes_raw[0],
-            #             "values": mc_attributes_raw[1],
-            #         }
-            #     )
             regex_split_attributes = re.compile(r"""(\S+)=["](\S+)["]""")
             mc_attribute_groups = regex_split_attributes.findall(magic_comment)
             print("mc_attribute_groups", mc_attribute_groups)
             for group in mc_attribute_groups:
-                # magic_comment_dict["attributes"].append(
-                #     {
-                #         "name": mc_attribute_group[0],
-                #         "values": mc_attribute_group[1],
-                #     }
-                # )
                 magic_comment_dict["attributes"][group[0]] = group[1]
             magic_comments_list.append(magic_comment_dict)
         return magic_comments_list
@@ -964,16 +934,6 @@ ${entity}
                 result_text = self.magic_comment_handle__replace_search(
                     mc_attributes, input_text
                 )
-            # attr_name = mc_attributes[0]["name"]
-            # if attr_name == "src_prepend":
-            #     result_text = self.magic_comment_handle__src_prepend(
-            #         attr_value, input_text
-            #     )
-            # elif attr_name == "replace_search":
-            #     attr_value = mc_attributes[0]["value"]
-            #     result_text = self.magic_comment_handle__replace_search(
-            #         mc_attributes, input_text
-            #     )
             else:
                 print("attribute names '{}' not implemented.".format(mc_attributes))
         else:
@@ -982,11 +942,11 @@ ${entity}
 
     def handle_magic_comment(self, input_text):
         magic_comments_list = self.magic_comments_find_and_parse(input_text)
-        print("magic_comments_list:")
-        for mc in magic_comments_list:
-            print(" - {}".format(repr(mc["raw_content"])))
-            for item in mc["attributes"].items():
-                print("   - {}".format(item))
+        # print("magic_comments_list:")
+        # for mc in magic_comments_list:
+        #     print(" - {}".format(repr(mc["raw_content"])))
+        #     for item in mc["attributes"].items():
+        #         print("   - {}".format(item))
         for magic_comment in magic_comments_list:
             input_text = self.magic_comment_handle(magic_comment, input_text)
         return input_text
