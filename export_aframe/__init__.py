@@ -930,13 +930,13 @@ ${entity}
         # test text
         # input_text = """<a-asset-item id="Cube" src="./assets/Cube.gltf" ></a-asset-item>"""
         result_text = input_text.replace(replace_search, replace_with)
-        print("  → replaced {} occurencies".format(input_text.count(replace_search)))
+        print("  → replaced {} occurrences".format(input_text.count(replace_search)))
         return result_text
 
     def magic_comment_handle(self, magic_comment, input_text):
         result_text = input_text
         mc_attributes = magic_comment["attributes"]
-        print("mc_attributes = {}".format(repr(mc_attributes)))
+        # print("mc_attributes = {}".format(repr(mc_attributes)))
         if len(mc_attributes) > 0:
             if "src_prepend" in mc_attributes:
                 result_text = self.magic_comment_handle__src_prepend(
@@ -954,11 +954,11 @@ ${entity}
 
     def handle_magic_comment(self, input_text):
         magic_comments_list = self.magic_comments_find_and_parse(input_text)
-        print("magic_comments_list:")
-        for mc in magic_comments_list:
-            print(" - {}".format(repr(mc["raw_content"])))
-            for item in mc["attributes"].items():
-                print("   - {}".format(item))
+        # print("magic_comments_list:")
+        # for mc in magic_comments_list:
+        #     print(" - {}".format(repr(mc["raw_content"])))
+        #     for item in mc["attributes"].items():
+        #         print("   - {}".format(item))
         for magic_comment in magic_comments_list:
             input_text = self.magic_comment_handle(magic_comment, input_text)
         return input_text
