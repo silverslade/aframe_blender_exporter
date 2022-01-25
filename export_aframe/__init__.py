@@ -403,6 +403,7 @@ ${entity}
 
             if add_asset:
                 self.assets.append(
+                    "            "
                     '<img id="{id}" src="./{path}/{filename}" crossorigin="anonymous" />'
                     "".format(id=add_asset, path=dest_path, filename=filename)
                 )
@@ -534,7 +535,7 @@ ${entity}
         entity_lines.append("></a-entity>")
 
         # build entity string
-        entity_preline_base = "                "
+        entity_preline_base = "            "
         entity_str = ""
         for item in entity_lines:
             entity_str += "{}{}\n".format(entity_preline_base, item)
@@ -582,7 +583,7 @@ ${entity}
 
             # single line format
             self.assets.append(
-                "                <a-asset-item "
+                "            <a-asset-item "
                 'id="{mesh_name}" '
                 'src="./assets/{mesh_name}.gltf" '
                 "></a-asset-item>\n"
@@ -975,6 +976,7 @@ ${entity}
         id = "sky"
         if self.scene.b_show_env_sky:
             self.entities.append(
+                "        "
                 '<a-sky src="#{id}" material="" geometry="" rotation="0 90 0"></a-sky>'
                 "".format(id=id)
             )
@@ -1005,7 +1007,7 @@ ${entity}
             )
         else:
             self.entities.append(
-                '<a-sky id="#{id}" color="#ECECFF"></a-sky>'.format(id=id)
+                "        " '<a-sky id="#{id}" color="#ECECFF"></a-sky>'.format(id=id)
             )
 
     def get_raycaster_showvr(self):
