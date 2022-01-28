@@ -896,11 +896,11 @@ ${entity}
         for magic_comment in magic_comments:
             magic_comment = magic_comment.strip()
             # magic_comment = magic_comment.decode()
-            print(
-                'magic_comment "{}" → r"""{}""" '.format(
-                    magic_comment, repr(magic_comment)
-                )
-            )
+            # print(
+            #     'magic_comment "{}" → r"""{}""" '.format(
+            #         magic_comment, repr(magic_comment)
+            #     )
+            # )
             # print("magic_comment {}".format(repr(magic_comment)))
             magic_comment_dict = {
                 "raw_content": magic_comment,
@@ -919,20 +919,22 @@ ${entity}
             )
             mc_attribute_groups = regex_split_attributes.findall(magic_comment)
             # print("mc_attribute_groups", mc_attribute_groups)
-            for item_name, item_value in mc_attribute_groups:
-                print("* item_name:'{}'  item_value:'{}'".format(item_name, item_value))
+            for item_name, item_quote, item_value in mc_attribute_groups:
+                # print("* item_name:'{}'  item_value:'{}'".format(item_name, item_value))
                 # decode escape sequences like \" to "
                 item_name = item_name.encode().decode("unicode-escape")
-                print(" → item_name", item_name)
+                # print(" → item_name", item_name)
                 item_value = item_value.encode().decode("unicode-escape")
-                print(" → item_value", item_value)
+                # print(" → item_value", item_value)
                 magic_comment_dict["attributes"][item_name] = item_value
             magic_comments_list.append(magic_comment_dict)
         return magic_comments_list
 
     def magic_comment_handle__src_prepend(self, mc_attributes, input_text):
-        value = mc_attributes["src_prepend"]
-        result_text = input_text.replace('src="', 'src="{}'.format(value))
+        print("magic_comment_handle__src_prepend:")
+        src_prepend = mc_attributes["src_prepend"]
+        print("  src_prepend = ", repr(src_prepend))
+        result_text = input_text.replace('src="', 'src="{}'.format(src_prepend))
         return result_text
 
     def magic_comment_handle__replace_search(self, mc_attributes, input_text):
