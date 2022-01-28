@@ -889,13 +889,18 @@ ${entity}
         magic_comments_list = []
         # <!-- MAGIC-COMMENT src_prepend="<?php echo get_stylesheet_directory_uri(); ?>/" -->
         # <!-- MAGIC-COMMENT replace_search="src=\"./" replace_with="src=\"~assets/" -->
+        # <!-- MAGIC-COMMENT test="src=\"<?php echo x ?>" -->
         regex_find_magic_comment = re.compile(r"<!--\s*MAGIC-COMMENT\s*?(.*?)\s*?-->")
         magic_comments = regex_find_magic_comment.findall(input_text)
         # print("magic_comments", magic_comments)
         for magic_comment in magic_comments:
             magic_comment = magic_comment.strip()
             # magic_comment = magic_comment.decode()
-            print("magic_comment {}".format(magic_comment))
+            print(
+                'magic_comment "{}" → r"""{}""" '.format(
+                    magic_comment, repr(magic_comment)
+                )
+            )
             # print("magic_comment {}".format(repr(magic_comment)))
             magic_comment_dict = {
                 "raw_content": magic_comment,
@@ -905,13 +910,22 @@ ${entity}
             # >>> magic_comment = r"""replace_search="src=\"./" replace_with="src=\\"~assets/" """
             # >>> magic_comment
             # 'replace_search="src=\\"./" replace_with="src=\\\\"~assets/" '
-            regex_split_attributes = re.compile(r"""\s*?(\S+)="(\S+)"\s*?""")
+            # >>> magic_comment = r"""test="src=\"<?php echo x ?>" """
+            # regex_split_attributes = re.compile(r"""\s*?(\S+)="([\S<>\?]+)"\s*?""")
+            # regex_split_attributes = re.compile(r"""(\S+)(?<==")(.*)(?=")""")
+            # regex based on https://www.metaltoad.com/blog/regex-quoted-string-escapable-quotes
+            regex_split_attributes = re.compile(
+                r"""(\S+)=((?<![\\])['"])((?:.(?!(?<![\\])\2))*.?)\2"""
+            )
             mc_attribute_groups = regex_split_attributes.findall(magic_comment)
-            print("mc_attribute_groups", mc_attribute_groups)
+            # print("mc_attribute_groups", mc_attribute_groups)
             for item_name, item_value in mc_attribute_groups:
+                print("* item_name:'{}'  item_value:'{}'".format(item_name, item_value))
                 # decode escape sequences like \" to "
                 item_name = item_name.encode().decode("unicode-escape")
+                print(" → item_name", item_name)
                 item_value = item_value.encode().decode("unicode-escape")
+                print(" → item_value", item_value)
                 magic_comment_dict["attributes"][item_name] = item_value
             magic_comments_list.append(magic_comment_dict)
         return magic_comments_list
