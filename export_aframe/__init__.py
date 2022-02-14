@@ -78,96 +78,104 @@ class ExportAframe(object):
 
             tpl.from_string(
                 """<!doctype html>
-    <html lang="en">
-        <!--
-            Generated automatically by AFRAME Exporter for Blender -
-            https://silverslade.itch.io/a-frame-blender-exporter
-        -->
-        <head>
-            <title>WebXR Application</title>
-            <link rel="icon" type="image/png" href="favicon.ico"/>
-            <meta name="description" content="3D Application">
-            <meta charset="utf-8">
-            <meta http-equiv="X-UA-Compatible" content="IE=edge">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <script src="https://aframe.io/releases/${aframe_version}/aframe.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.0/dist/aframe-extras.min.js"></script> # noqa
-            <script type="text/javascript" src="js/webxr.js"></script>
-            <script type="text/javascript" src="js/joystick.js"></script>
-            <script type="text/javascript" src="js/camera-cube-env.js"></script>
+<html lang="en">
+<!--
+    Generated automatically by AFRAME Exporter for Blender -
+    https://silverslade.itch.io/a-frame-blender-exporter
+-->
+<head>
+    <title>WebXR Application</title>
+    <link rel="icon" type="image/png" href="favicon.ico"/>
+    <meta name="description" content="3D Application">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://aframe.io/releases/${aframe_version}/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script> # noqa
+    <script type="text/javascript" src="js/webxr.js"></script>
+    <script type="text/javascript" src="js/joystick.js"></script>
+    <script type="text/javascript" src="js/camera-cube-env.js"></script>
 
-            <link rel="stylesheet" type="text/css" href="style.css">
-        </head>
-        <body onload="init();">
-            <a-scene
-                ${stats}
-                ${joystick}
-                ${render_shadows}
-                ${renderer}
-            >
-                <!-- Assets -->
-                <a-assets>
+    <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body onload="init();">
+<a-scene
+    ${stats}
+    ${joystick}
+    ${render_shadows}
+    ${renderer}
+>
+
+
+    <!-- Assets -->
+    <a-assets>
 ${asset}
-                </a-assets>
+    </a-assets>
 
-                <!-- Entities -->
+
+
+
+    <!-- Entities -->
 ${entity}
 
-                <!-- Camera -->
-                <a-entity id="player"
-                    position="0 -0.2 0"
-                    movement-controls="speed: ${player_speed};">
-                    <a-entity id="camera"
-                        camera="near: 0.001"
-                        position="0 ${player_height} 0"
-                        look-controls="pointerLockEnabled: true">
-                            <a-entity id="cursor"
-                                cursor="fuse: false;"
-                                animation__click="
-                                    property: scale;
-                                    startEvents: click;
-                                    easing: easeInCubic;
-                                    dur: 50;
-                                    from: 	0.1 0.1 0.1;
-                                    to: 1 1 1
-                                "
-                                position="0 0 -0.1"
-                                geometry="primitive: circle; radius: 0.001;"
-                                material="color: #CCC; shader: flat;"
-                                ${show_raycast}>
-                            </a-entity>
-                    </a-entity>
-                        ${vr_controllers}
+
+
+
+    <!-- Camera -->
+    <a-entity id="player"
+        position="0 -0.2 0"
+        movement-controls="speed: ${player_speed};">
+        <a-entity id="camera"
+            camera="near: 0.001"
+            position="0 ${player_height} 0"
+            look-controls="pointerLockEnabled: true">
+                <a-entity id="cursor"
+                    cursor="fuse: false;"
+                    animation__click="
+                        property: scale;
+                        startEvents: click;
+                        easing: easeInCubic;
+                        dur: 50;
+                        from: 	0.1 0.1 0.1;
+                        to: 1 1 1
+                    "
+                    position="0 0 -0.1"
+                    geometry="primitive: circle; radius: 0.001;"
+                    material="color: #CCC; shader: flat;"
+                    ${show_raycast}>
                 </a-entity>
+        </a-entity>
+            ${vr_controllers}
+    </a-entity>
 
-                <!-- Lights -->
-                <a-entity
-                    light="
-                        intensity: ${directional_intensity};
-                        castShadow: ${cast_shadows};
-                        shadowBias: -0.001;
-                        shadowCameraFar: 501.02;
-                        shadowCameraBottom: 12;
-                        shadowCameraFov: 101.79;
-                        shadowCameraNear: 0;
-                        shadowCameraTop: -5;
-                        shadowCameraRight: 10;
-                        shadowCameraLeft: -10;
-                        shadowRadius: 2
-                    "
-                    position="1.4 7.2 1"
-                ></a-entity>
-                <a-entity
-                    light="
-                        type: ambient;
-                        intensity: ${ambient_intensity}
-                    "
-                ></a-entity>
+    <!-- Lights -->
+    <a-entity
+        light="
+            intensity: ${directional_intensity};
+            castShadow: ${cast_shadows};
+            shadowBias: -0.001;
+            shadowCameraFar: 501.02;
+            shadowCameraBottom: 12;
+            shadowCameraFov: 101.79;
+            shadowCameraNear: 0;
+            shadowCameraTop: -5;
+            shadowCameraRight: 10;
+            shadowCameraLeft: -10;
+            shadowRadius: 2
+        "
+        position="1.4 7.2 1"
+    ></a-entity>
+    <a-entity
+        light="
+            type: ambient;
+            intensity: ${ambient_intensity}
+        "
+    ></a-entity>
 
-            </a-scene>
-        </body>
-    </html>
-    <!-- Generated automatically by AFRAME Exporter for Blender - https://silverslade.itch.io/a-frame-blender-exporter -->
+</a-scene>
+</body>
+</html>
+<!-- Generated automatically by AFRAME Exporter for Blender - https://silverslade.itch.io/a-frame-blender-exporter -->
     """
             )
 
@@ -515,7 +523,7 @@ ${entity}
         # print("prepare_entity_str")
         if not any(item.startswith("id") for item in entity_attributes):
             # only add if no other attribute for shadow is there..
-            entity_attributes.append('id="#{obj_name}"')
+            entity_attributes.append('id="{obj_name}"')
         entity_attributes.append('position="{position}"')
         entity_attributes.append('rotation="{rotation}"')
         entity_attributes.append('scale="{scale}"')
@@ -532,7 +540,9 @@ ${entity}
         entity_lines.append("<a-entity ")
         for item in entity_attributes:
             entity_lines.append("{}{}".format(entity_preline_sub, item))
-        entity_lines.append("></a-entity>")
+        entity_lines.append(">")
+        entity_lines.append("{entity_content}")
+        entity_lines.append("</a-entity>")
 
         # build entity string
         entity_preline_base = "            "
@@ -598,6 +608,85 @@ ${entity}
             #     "".format(obj_name=obj.name)
             # )
         return mesh_name
+
+    def get_object_coordinates(self, obj):
+        actualposition = "0 0 0"
+        actualrotation = "0 0 0"
+        actualscale = "1 1 1"
+        if "rotation_mode" in obj:
+            # first reset rotation_mode to QUATERNION (otherwise it can have buggy side-effects)
+            obj.rotation_mode = "QUATERNION"
+            # force rotation_mode to YXZ to be compatible with our export
+            obj.rotation_mode = "YXZ"
+
+            # bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
+            # bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
+            location = obj.location.copy()
+            rotation = obj.rotation_euler.copy()
+
+            actualposition = (
+                str(location.x) + " " + str(location.z) + " " + str(-location.y)
+            )
+            actualscale = (
+                str(self.scalefactor * bpy.data.objects[obj.name].scale.x)
+                + " "
+                + str(self.scalefactor * bpy.data.objects[obj.name].scale.y)
+                + " "
+                + str(self.scalefactor * bpy.data.objects[obj.name].scale.z)
+            )
+            # https://aframe.io/docs/1.2.0/components/rotation.html#sidebar
+            # pi = 22.0/7.0
+            # actualrotation = (
+            #     str(
+            #         ((bpy.data.objects[obj.name].rotation_euler.x) / (2 * pi) * 360)
+            #         - 90
+            #     )
+            #     + " "
+            #     + str(
+            #         ((bpy.data.objects[obj.name].rotation_euler.z) / (2 * pi) * 360)
+            #         - 0
+            #     )
+            #     + " "
+            #     + str(
+            #         ((bpy.data.objects[obj.name].rotation_euler.y) / (2 * pi) * 360)
+            #         + 90
+            #     )
+            # )
+            # actualrotation = (
+            #     str(bpy.data.objects[obj.name].rotation_euler.x)
+            #     + " "
+            #     + str(bpy.data.objects[obj.name].rotation_euler.z)
+            #     + " "
+            #     + str(bpy.data.objects[obj.name].rotation_euler.y)
+            # )
+            # actualrotation = (
+            #     str(
+            #         math.degrees(
+            #             -89.99 + bpy.data.objects[obj.name].rotation_euler.x
+            #         )
+            #     )
+            #     + " "
+            #     + str(
+            #         90 + math.degrees(bpy.data.objects[obj.name].rotation_euler.y)
+            #     )
+            #     + " "
+            #     + str(
+            #         -90 + math.degrees(bpy.data.objects[obj.name].rotation_euler.z)
+            #     )
+            # )
+            actualrotation = (
+                str(math.degrees(rotation.x))
+                + " "
+                + str(math.degrees(rotation.z))
+                + " "
+                + str(math.degrees(-rotation.y))
+            )
+            # actualrotation = "0 " + str(math.degrees(rotation.z)) + " 0"
+
+        print("  actualposition", actualposition)
+        print("  actualrotation", actualrotation)
+        print("  actualscale", actualscale)
+        return actualposition, actualrotation, actualscale
 
     def handle_propertie_video(self, *, prop, obj):
         attributes = []
@@ -694,10 +783,42 @@ ${entity}
             )
         return custom_attributes
 
-    def export_object_type_mesh(
-        self, *, obj, actualscale, actualposition, actualrotation
-    ):
-        entity_attributes = []
+    def handle_lightmap_things(self, *, obj, entity_attributes):
+        #####################
+        # handle lightmap things
+        # check if baked texture is present on filesystem
+        # images = bpy.data.images
+        # for img in images:
+        #    if obj.name+"_baked" in img.name and img.has_data:
+        #       print("ok")
+        #       baked = 'light-map-geometry="path: lightmaps/'+img.name+'"'
+        print("[LIGHTMAP] Searching Lightmap for object [" + obj.name + "_baked" + "]")
+        for file in self.lightmap_files:
+            if obj.name + "_baked" in file:
+                print("[LIGHTMAP] Found lightmap: " + file)
+                entity_attributes.append(
+                    'light-map-geometry="path: lightmaps/{}; intensity:{};"'.format(
+                        file, self.scene.f_lightMapIntensity
+                    )
+                )
+
+    def export_object(self, *, obj, entity_attributes):
+        print("export_object", obj)
+        # prepare export
+        mesh_name = ""
+        if not any(item.startswith(("image", "video")) for item in entity_attributes):
+            self.handle_lightmap_things(obj=obj, entity_attributes=entity_attributes)
+            #####################
+            # handle mesh
+            mesh_name = self.get_or_export_mesh(obj)
+            entity_attributes.append(
+                'gltf-model="#{mesh_name}"\n'.format(mesh_name=mesh_name)
+            )
+        return entity_attributes
+
+    def export_entity_finalise(self, *, obj, entity_attributes=[], entity_content=""):
+        actualposition, actualrotation, actualscale = self.get_object_coordinates(obj)
+
         for prop in obj.keys():
             if prop not in "_RNA_UI":
                 prop_custom_attributes = []
@@ -709,34 +830,6 @@ ${entity}
                     actualrotation=actualrotation,
                 )
                 entity_attributes.extend(prop_custom_attributes)
-
-        # prepare export
-        mesh_name = ""
-        if not any(item.startswith(("image", "video")) for item in entity_attributes):
-            #####################
-            # handle lightmap things
-            # check if baked texture is present on filesystem
-            # images = bpy.data.images
-            # for img in images:
-            #    if obj.name+"_baked" in img.name and img.has_data:
-            #       print("ok")
-            #       baked = 'light-map-geometry="path: lightmaps/'+img.name+'"'
-            print(
-                "[LIGHTMAP] Searching Lightmap for object [" + obj.name + "_baked" + "]"
-            )
-            for file in self.lightmap_files:
-                if obj.name + "_baked" in file:
-                    print("[LIGHTMAP] Found lightmap: " + file)
-                    entity_attributes.append(
-                        'light-map-geometry="path: lightmaps/{}; intensity:{};"'.format(
-                            file, self.scene.f_lightMapIntensity
-                        )
-                    )
-            #####################
-            # handle mesh
-            mesh_name = self.get_or_export_mesh(obj)
-            entity_attributes.append('gltf-model="#{mesh_name}"\n')
-
         shadow_cast = "false"
         if self.scene.b_cast_shadows:
             shadow_cast = "true"
@@ -745,103 +838,31 @@ ${entity}
         # replace placeholders with values
         entity_str = entity_str.format(
             obj_name=obj.name,
-            mesh_name=mesh_name,
             position=actualposition,
             rotation=actualrotation,
             scale="1 1 1",
             shadow_cast=shadow_cast,
+            entity_content=entity_content,
         )
-        self.entities.append(entity_str)
+        return entity_str
 
-    def get_object_coordinates(self, obj):
-        # bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
-        # bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
-        location = obj.location.copy()
-        rotation = obj.rotation_euler.copy()
-
-        actualposition = (
-            str(location.x) + " " + str(location.z) + " " + str(-location.y)
-        )
-        actualscale = (
-            str(self.scalefactor * bpy.data.objects[obj.name].scale.x)
-            + " "
-            + str(self.scalefactor * bpy.data.objects[obj.name].scale.y)
-            + " "
-            + str(self.scalefactor * bpy.data.objects[obj.name].scale.z)
-        )
-        # https://aframe.io/docs/1.2.0/components/rotation.html#sidebar
-        # pi = 22.0/7.0
-        # actualrotation = (
-        #     str(
-        #         ((bpy.data.objects[obj.name].rotation_euler.x) / (2 * pi) * 360)
-        #         - 90
-        #     )
-        #     + " "
-        #     + str(
-        #         ((bpy.data.objects[obj.name].rotation_euler.z) / (2 * pi) * 360)
-        #         - 0
-        #     )
-        #     + " "
-        #     + str(
-        #         ((bpy.data.objects[obj.name].rotation_euler.y) / (2 * pi) * 360)
-        #         + 90
-        #     )
-        # )
-        # actualrotation = (
-        #     str(bpy.data.objects[obj.name].rotation_euler.x)
-        #     + " "
-        #     + str(bpy.data.objects[obj.name].rotation_euler.z)
-        #     + " "
-        #     + str(bpy.data.objects[obj.name].rotation_euler.y)
-        # )
-        # actualrotation = (
-        #     str(
-        #         math.degrees(
-        #             -89.99 + bpy.data.objects[obj.name].rotation_euler.x
-        #         )
-        #     )
-        #     + " "
-        #     + str(
-        #         90 + math.degrees(bpy.data.objects[obj.name].rotation_euler.y)
-        #     )
-        #     + " "
-        #     + str(
-        #         -90 + math.degrees(bpy.data.objects[obj.name].rotation_euler.z)
-        #     )
-        # )
-        actualrotation = (
-            str(math.degrees(rotation.x))
-            + " "
-            + str(math.degrees(rotation.z))
-            + " "
-            + str(math.degrees(-rotation.y))
-        )
-        # actualrotation = "0 " + str(math.degrees(rotation.z)) + " 0"
-
-        print("  actualposition", actualposition)
-        print("  actualrotation", actualrotation)
-        print("  actualscale", actualscale)
-        return actualposition, actualrotation, actualscale
-
-    def export_object(self, obj):
+    def traverse_object(self, obj):
+        print("traverse_object", obj)
         bpy.ops.object.select_all(action="DESELECT")
         obj.select_set(state=True)
         bpy.context.view_layer.objects.active = obj
-        # first reset rotation_mode to QUATERNION (otherwise it can have buggy side-effects)
-        obj.rotation_mode = "QUATERNION"
-        # force rotation_mode to YXZ to be compatible with our export
-        obj.rotation_mode = "YXZ"
 
-        actualposition, actualrotation, actualscale = self.get_object_coordinates(obj)
+        # prepare
+        entity_attributes = []
+        entity_content = ""
 
-        if obj.type == "MESH":
+        if (obj.type == "MESH") or (obj.type == "ARMATURE"):
             # print(obj.name,"custom properties:")
-            self.export_object_type_mesh(
-                obj=obj,
-                actualscale=actualscale,
-                actualposition=actualposition,
-                actualrotation=actualrotation,
-            )
+            self.export_object(obj=obj, entity_attributes=entity_attributes)
+        elif obj.type == "EMPTY":
+            # check for children
+            if obj.children:
+                entity_content += self.traverse_objects(obj.children)
         else:
             print(
                 b_helper.colors.fg.red
@@ -850,12 +871,92 @@ ${entity}
                 )
                 + b_helper.colors.reset
             )
+
+        print("traverse_object - about ready...")
+        print("traverse_object - entity_attributes:", entity_attributes)
+        # all things prepared. convert to string...
+        entity_str = self.export_entity_finalise(
+            obj=obj,
+            entity_attributes=entity_attributes,
+            entity_content=entity_content,
+        )
+        print("traverse_object - entity_str", entity_str)
         # deselect object
         obj.select_set(state=False)
+        return entity_str
 
-    def export_objects(self):
-        # Loop 3D entities
-        exclusion_obj_types = ["CAMERA", "LAMP", "ARMATURE"]
+    def traverse_objects(self, objects):
+        exclusion_obj_types = ["CAMERA", "LIGHT"]
+        entity_content = ""
+        for obj in objects:
+            msg = "[AFRAME EXPORTER] object '{}' ".format(obj.name)
+            # ignore non direct childs
+            if not obj.parent:
+                if obj.type not in exclusion_obj_types:
+                    if not obj.hide_viewport and not obj.hide_render:
+                        print(msg + "export..")
+                        entity_content = self.traverse_object(obj)
+                        self.exported_obj += 1
+                    else:
+                        print(msg + "ignored: not visible")
+                else:
+                    print(
+                        b_helper.colors.fg.yellow
+                        + msg
+                        + "ignored: not exportable / not implemented"
+                        + b_helper.colors.reset
+                    )
+            else:
+                print(msg + "ignored for now - has parent.")
+        bpy.ops.object.select_all(action="DESELECT")
+        return entity_content
+
+    def traverse_collection(self, collection):
+        # create a entity as grouping element
+        # and traverse all objects belonging to this collection
+
+        # prepare
+        # entity_attributes = []
+        entity_content = ""
+
+        # check for sub collections
+        if len(collection.children) > 0:
+            # recusvie traversing..
+            entity_content += self.traverse_collections(collection.children)
+
+        # now add direct child objects
+        entity_content += self.traverse_objects(collection.objects)
+
+        # all things prepared.
+        # create entity for collection
+        # and set entitty content
+        print("-- traverse_collection '{}' - prepare final..".format(collection.name))
+        print("traverse_collection entity_content", entity_content)
+        entity_str = self.export_entity_finalise(
+            obj=collection,
+            # entity_attributes=entity_attributes,
+            entity_content=entity_content,
+        )
+        self.exported_obj += 1
+        return entity_str
+
+    def traverse_collections(self, collections):
+        entity_str = ""
+        for collection in collections:
+            msg = "[AFRAME EXPORTER] collection '{}' ".format(collection.name)
+            if not collection.hide_viewport and not collection.hide_render:
+                print(msg)
+                entity_str = self.traverse_collection(collection)
+            else:
+                print(msg + "ignored: not visible")
+        return entity_str
+
+    def traverse_collection_and_object_tree(self):
+        # new approach: traverse collection tree
+        entity_str = self.traverse_collections(bpy.context.scene.collection.children)
+        self.entities.append(entity_str)
+
+    def export_prepare(self):
         self.exported_obj = 0
         self.videocount = 0
         self.imagecount = 0
@@ -866,23 +967,85 @@ ${entity}
         for file in self.lightmap_files:
             print("[LIGHTMAP] Found Lightmap file: " + file)
 
-        # debug: list all objects
-        # for obj in bpy.data.objects:
-        #     print(obj)
+    ##########################################
+    # print collection and object tree
+    def print_tree_object(self, obj, line_pre=""):
+        lines = []
+        if (obj.type == "MESH") or (obj.type == "ARMATURE"):
+            lines.append(line_pre + "export_object '{}'".format(obj.name))
+        elif obj.type == "EMPTY":
+            lines.append(line_pre + "empty '{}'".format(obj.name))
+            if obj.children:
+                lines.extend(self.print_tree_objects(obj.children, line_pre + "    "))
+        else:
+            lines.append(
+                line_pre
+                + b_helper.colors.fg.red
+                + "object '{}' of type '{}' currently not implemented. ".format(
+                    obj.name, obj.type
+                )
+                + b_helper.colors.reset
+            )
+        return lines
 
-        for obj in bpy.data.objects:
-            msg = "[AFRAME EXPORTER] object '{}' ".format(obj.name)
-            if obj.type not in exclusion_obj_types:
-                if obj.visible_get():
-                    print(msg + "export..")
-                    self.export_object(obj)
-                    self.exported_obj += 1
+    def print_tree_objects(self, objects, line_pre=""):
+        exclusion_obj_types = ["CAMERA", "LIGHT"]
+        lines = []
+        for obj in objects:
+            msg = line_pre + "object '{}' ".format(obj.name)
+            # ignore non direct childs
+            if not obj.parent:
+                if obj.type not in exclusion_obj_types:
+                    if not obj.hide_viewport and not obj.hide_render:
+                        lines.extend(self.print_tree_object(obj, line_pre))
+                    else:
+                        lines.append(msg + "ignored: not visible")
                 else:
-                    print(msg + "ignored: not visible")
+                    lines.append(
+                        b_helper.colors.fg.yellow
+                        + msg
+                        + "ignored: not exportable / not implemented"
+                        + b_helper.colors.reset
+                    )
             else:
-                print(msg + "ignored: not exportable")
+                lines.append(msg + "ignored for now - has parent.")
+        return lines
 
-        bpy.ops.object.select_all(action="DESELECT")
+    def print_tree_collection(self, collection, line_pre=""):
+        lines = []
+        # check for sub collections
+        if len(collection.children) > 0:
+            # recusvie traversing..
+            lines.extend(
+                self.print_tree_collections(collection.children, line_pre + "    ")
+            )
+        lines.extend(self.print_tree_objects(collection.objects, line_pre + "    "))
+        return lines
+
+    def print_tree_collections(self, collections, line_pre=""):
+        lines = []
+        for collection in collections:
+            msg = line_pre + "collection '{}' ".format(collection.name)
+            if not collection.hide_viewport and not collection.hide_render:
+                lines.append(msg)
+                lines.extend(self.print_tree_collection(collection, line_pre))
+            else:
+                lines.append(msg + "ignored: not visible")
+        return lines
+
+    def print_collection_and_object_tree(self):
+        # new approach: traverse collection tree
+        lines = self.print_tree_collections(bpy.context.scene.collection.children)
+        print("")
+        print("#" * 42)
+        print("")
+        print("print_collection_and_object_tree: ")
+        print("\n".join(lines))
+        print("")
+        print("#" * 42)
+        print("")
+
+    ##
 
     def magic_comments_find_and_parse(self, input_text):
         print("magic_comments_find_and_parse...")
@@ -1201,14 +1364,18 @@ ${entity}
 
         self.resouce_handling()
 
-        self.export_objects()
+        self.export_prepare()
+
+        self.print_collection_and_object_tree()
+
+        # self.traverse_collection_and_object_tree()
 
         self.handle_sky()
 
+        print("entities handling finished.")
+        print("---")
+
         html_site_content, extra_output_content = self.fill_template()
-
-        # print(s)
-
         # writing the output files
         with open(os.path.join(self.base_path, constants.PATH_INDEX), "w") as file:
             file.write(html_site_content)
@@ -1227,7 +1394,7 @@ ${entity}
             with open(extra_output_full_path, "w") as file:
                 file.write(extra_output_content)
 
-        message = str(self.exported_obj) + " meshes exported"
+        message = str(self.exported_obj) + " objects exported"
         self.scene.s_output = message
         self.report({"INFO"}, message)
         return {"FINISHED"}
