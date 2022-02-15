@@ -62,6 +62,23 @@ class ExportAframe(object):
 
         self.scalefactor = 2
 
+        self.line_indent = "    "
+        self.line_indent_level = 0
+
+    @property
+    def line_pre(self):
+        return self.line_indent * self.line_indent_level
+
+    def line_indent_reset(self):
+        self.line_indent = "    "
+        self.line_indent_level = 0
+
+    def line_indent_level_in(self):
+        self.line_indent_level += 1
+
+    def line_indent_level_out(self):
+        self.line_indent_level -= 1
+
     def report(self, mode, data, pre_line=""):
         """Multi print handling."""
         b_helper.print_multi(
@@ -518,7 +535,8 @@ ${entity}
         self.add_resouce_enviroment()
         self.add_resouce_example_media()
 
-    ###
+    ##########################################
+    # ...
     def prepare_entity_str(self, entity_attributes):
         # print("prepare_entity_str")
         if not any(item.startswith("id") for item in entity_attributes):
@@ -541,7 +559,8 @@ ${entity}
         for item in entity_attributes:
             entity_lines.append("{}{}".format(entity_preline_sub, item))
         entity_lines.append(">")
-        entity_lines.append("{entity_content}")
+        # entity_content will be replaced in a second run - so we escape it for the first one..
+        entity_lines.append("{{entity_content}}")
         entity_lines.append("</a-entity>")
 
         # build entity string
@@ -816,7 +835,7 @@ ${entity}
             )
         return entity_attributes
 
-    def export_entity_finalise(self, *, obj, entity_attributes=[], entity_content=""):
+    def export_entity_prepare(self, *, obj, entity_attributes=[]):
         actualposition, actualrotation, actualscale = self.get_object_coordinates(obj)
 
         for prop in obj.keys():
@@ -842,119 +861,14 @@ ${entity}
             rotation=actualrotation,
             scale="1 1 1",
             shadow_cast=shadow_cast,
-            entity_content=entity_content,
         )
         return entity_str
 
-    def traverse_object(self, obj):
-        print("traverse_object", obj)
-        bpy.ops.object.select_all(action="DESELECT")
-        obj.select_set(state=True)
-        bpy.context.view_layer.objects.active = obj
-
-        # prepare
-        entity_attributes = []
-        entity_content = ""
-
-        if (obj.type == "MESH") or (obj.type == "ARMATURE"):
-            # print(obj.name,"custom properties:")
-            self.export_object(obj=obj, entity_attributes=entity_attributes)
-        elif obj.type == "EMPTY":
-            # check for children
-            if obj.children:
-                entity_content += self.traverse_objects(obj.children)
-        else:
-            print(
-                b_helper.colors.fg.red
-                + "object '{}' of type '{}' currently not implemented. ".format(
-                    obj.name, obj.type
-                )
-                + b_helper.colors.reset
-            )
-
-        print("traverse_object - about ready...")
-        print("traverse_object - entity_attributes:", entity_attributes)
-        # all things prepared. convert to string...
-        entity_str = self.export_entity_finalise(
-            obj=obj,
-            entity_attributes=entity_attributes,
+    def export_entity_finalise(self, *, entity_str, entity_content=""):
+        entity_str = entity_str.format(
             entity_content=entity_content,
         )
-        print("traverse_object - entity_str", entity_str)
-        # deselect object
-        obj.select_set(state=False)
         return entity_str
-
-    def traverse_objects(self, objects):
-        exclusion_obj_types = ["CAMERA", "LIGHT"]
-        entity_content = ""
-        for obj in objects:
-            msg = "[AFRAME EXPORTER] object '{}' ".format(obj.name)
-            # ignore non direct childs
-            if not obj.parent:
-                if obj.type not in exclusion_obj_types:
-                    if not obj.hide_viewport and not obj.hide_render:
-                        print(msg + "export..")
-                        entity_content = self.traverse_object(obj)
-                        self.exported_obj += 1
-                    else:
-                        print(msg + "ignored: not visible")
-                else:
-                    print(
-                        b_helper.colors.fg.yellow
-                        + msg
-                        + "ignored: not exportable / not implemented"
-                        + b_helper.colors.reset
-                    )
-            else:
-                print(msg + "ignored for now - has parent.")
-        bpy.ops.object.select_all(action="DESELECT")
-        return entity_content
-
-    def traverse_collection(self, collection):
-        # create a entity as grouping element
-        # and traverse all objects belonging to this collection
-
-        # prepare
-        # entity_attributes = []
-        entity_content = ""
-
-        # check for sub collections
-        if len(collection.children) > 0:
-            # recusvie traversing..
-            entity_content += self.traverse_collections(collection.children)
-
-        # now add direct child objects
-        entity_content += self.traverse_objects(collection.objects)
-
-        # all things prepared.
-        # create entity for collection
-        # and set entitty content
-        print("-- traverse_collection '{}' - prepare final..".format(collection.name))
-        print("traverse_collection entity_content", entity_content)
-        entity_str = self.export_entity_finalise(
-            obj=collection,
-            # entity_attributes=entity_attributes,
-            entity_content=entity_content,
-        )
-        self.exported_obj += 1
-        return entity_str
-
-    def traverse_collections(self, collections):
-        entity_str = ""
-        for collection in collections:
-            msg = "[AFRAME EXPORTER] collection '{}' ".format(collection.name)
-            if not collection.hide_viewport and not collection.hide_render:
-                print(msg)
-                entity_str = self.traverse_collection(collection)
-            else:
-                print(msg + "ignored: not visible")
-        return entity_str
-
-    def traverse_collection_and_object_tree(self):
-        # new approach: traverse collection tree
-        entity_str = self.traverse_collections(bpy.context.scene.collection.children)
-        self.entities.append(entity_str)
 
     def export_prepare(self):
         self.exported_obj = 0
@@ -968,15 +882,193 @@ ${entity}
             print("[LIGHTMAP] Found Lightmap file: " + file)
 
     ##########################################
+    # traverse collection and object tree
+    def traverse_object(self, obj):
+        print("traverse_object", obj)
+        lines = []
+
+        bpy.ops.object.select_all(action="DESELECT")
+        obj.select_set(state=True)
+        bpy.context.view_layer.objects.active = obj
+
+        # prepare
+        entity_attributes = []
+        entity_content = ""
+
+        if (obj.type == "MESH") or (obj.type == "ARMATURE"):
+            lines.append(self.line_pre + "export_object '{}'".format(obj.name))
+            if not self.print_only:
+                self.export_object(obj=obj, entity_attributes=entity_attributes)
+        elif obj.type == "EMPTY":
+            lines.append(self.line_pre + "empty '{}'".format(obj.name))
+            # check for children
+            if obj.children:
+                self.line_indent_level_in()
+                entity_content_temp, lines_temp = self.traverse_objects(obj.children)
+                lines.extend(lines_temp)
+                entity_content += entity_content_temp
+                self.line_indent_level_out()
+        else:
+            msg = (
+                b_helper.colors.fg.red
+                + (
+                    "object '{}' of type '{}' currently not implemented. "
+                    "we have only created a empty placeholder."
+                    "".format(obj.name, obj.type)
+                )
+                + b_helper.colors.reset
+            )
+            print(msg)
+            lines.append(msg)
+
+        print("traverse_object - about ready...")
+        print("traverse_object - entity_attributes:", entity_attributes)
+        # all things prepared. convert to string...
+        entity_str = self.export_entity_prepare(
+            obj=obj,
+            entity_attributes=entity_attributes,
+        )
+        entity_str = self.export_entity_finalise(
+            entity_str=entity_str,
+            entity_content=entity_content,
+        )
+        print("traverse_object - entity_str", entity_str)
+        # deselect object
+        obj.select_set(state=False)
+        return entity_str, lines
+
+    def traverse_objects(self, objects):
+        exclusion_obj_types = ["CAMERA", "LIGHT"]
+        entity_content = ""
+        lines = []
+        for obj in objects:
+            msg = self.line_pre + "object '{}' ".format(obj.name)
+            # ignore non direct childs
+            if not obj.parent:
+                if obj.type not in exclusion_obj_types:
+                    if not obj.hide_viewport and not obj.hide_render:
+                        msg += "export.."
+                        print(msg)
+                        lines.append(msg)
+
+                        self.line_indent_level_in()
+                        entity_content_temp, lines_temp = self.traverse_object(obj)
+                        lines.extend(lines_temp)
+                        entity_content += entity_content_temp
+                        self.line_indent_level_out()
+
+                        self.exported_obj += 1
+                    else:
+                        msg += "ignored: not visible"
+                        print(msg)
+                        lines.append(msg)
+                else:
+                    msg = (
+                        b_helper.colors.fg.yellow
+                        + msg
+                        + "ignored: not exportable / not implemented"
+                        + b_helper.colors.reset
+                    )
+                    print(msg)
+                    lines.append(msg)
+            else:
+                msg += "ignored: has parent."
+                print(msg)
+                lines.append(msg)
+        bpy.ops.object.select_all(action="DESELECT")
+        return entity_content, lines
+
+    def traverse_collection(self, collection):
+        # create a entity as grouping element
+        # and traverse all objects belonging to this collection
+
+        # prepare
+        lines = []
+        # entity_attributes = []
+        entity_content = ""
+
+        # create entity for collection
+        entity_str = self.export_entity_prepare(
+            obj=collection,
+            # entity_attributes=entity_attributes,
+        )
+        # self.print_only
+
+        # handle sub collections
+        if len(collection.children) > 0:
+            # recusvie traversing..
+            self.line_indent_level_in()
+            entity_content_temp, lines_temp = self.traverse_collections(
+                collection.children
+            )
+            lines.extend(lines_temp)
+            entity_content += entity_content_temp
+            self.line_indent_level_out()
+
+        # now add direct child objects
+        self.line_indent_level_in()
+        entity_content_temp, lines_temp = self.traverse_objects(collection.objects)
+        lines.extend(lines_temp)
+        entity_content += entity_content_temp
+        self.line_indent_level_out()
+
+        # all things prepared.
+        # print("-- traverse_collection '{}' - prepare final..".format(collection.name))
+        # print("traverse_collection entity_content", entity_content)
+        # set entitty content
+        entity_str = self.export_entity_finalise(
+            entity_str=entity_str,
+            entity_content=entity_content,
+        )
+        self.exported_obj += 1
+        return entity_str, lines
+
+    def traverse_collections(self, collections):
+        lines = []
+        entity_str = ""
+        for collection in collections:
+            msg = self.line_pre + "collection '{}' ".format(collection.name)
+            if not collection.hide_viewport and not collection.hide_render:
+                lines.append(msg)
+                print(msg)
+                entity_str, lines_temp = self.traverse_collection(collection)
+                lines.extend(lines_temp)
+            else:
+                msg += "ignored: not visible"
+                lines.append(msg)
+                print(msg)
+        return entity_str, lines
+
+    def traverse_collection_and_object_tree(self, print_only=False):
+        # new approach: traverse collection tree
+        self.print_only = print_only
+        self.line_indent_reset()
+        entity_str, lines = self.traverse_collections(
+            bpy.context.scene.collection.children
+        )
+        if not self.print_only:
+            self.entities.append(entity_str)
+        print("")
+        print("#" * 42)
+        print("")
+        print("exported objects: ")
+        print("\n".join(lines))
+        print("")
+        print("#" * 42)
+        print("")
+
+    ##########################################
     # print collection and object tree
     def print_tree_object(self, obj, line_pre=""):
         lines = []
         if (obj.type == "MESH") or (obj.type == "ARMATURE"):
-            lines.append(line_pre + "export_object '{}'".format(obj.name))
+            lines.append(self.line_pre + "export_object '{}'".format(obj.name))
         elif obj.type == "EMPTY":
-            lines.append(line_pre + "empty '{}'".format(obj.name))
+            lines.append(self.line_pre + "empty '{}'".format(obj.name))
             if obj.children:
-                lines.extend(self.print_tree_objects(obj.children, line_pre + "    "))
+                self.line_indent_level_in()
+                lines.extend(self.print_tree_objects(obj.children))
+                self.line_indent_level_out()
         else:
             lines.append(
                 line_pre
@@ -988,16 +1080,16 @@ ${entity}
             )
         return lines
 
-    def print_tree_objects(self, objects, line_pre=""):
+    def print_tree_objects(self, objects):
         exclusion_obj_types = ["CAMERA", "LIGHT"]
         lines = []
         for obj in objects:
-            msg = line_pre + "object '{}' ".format(obj.name)
+            msg = self.line_pre + "object '{}' ".format(obj.name)
             # ignore non direct childs
             if not obj.parent:
                 if obj.type not in exclusion_obj_types:
                     if not obj.hide_viewport and not obj.hide_render:
-                        lines.extend(self.print_tree_object(obj, line_pre))
+                        lines.extend(self.print_tree_object(obj))
                     else:
                         lines.append(msg + "ignored: not visible")
                 else:
@@ -1011,30 +1103,35 @@ ${entity}
                 lines.append(msg + "ignored for now - has parent.")
         return lines
 
-    def print_tree_collection(self, collection, line_pre=""):
+    def print_tree_collection(self, collection):
         lines = []
         # check for sub collections
         if len(collection.children) > 0:
             # recusvie traversing..
-            lines.extend(
-                self.print_tree_collections(collection.children, line_pre + "    ")
-            )
-        lines.extend(self.print_tree_objects(collection.objects, line_pre + "    "))
+            self.line_indent_level_in()
+            lines.extend(self.print_tree_collections(collection.children))
+            self.line_indent_level_out()
+        # handle direct objects
+        self.line_indent_level_in()
+        lines.extend(self.print_tree_objects(collection.objects))
+        self.line_indent_level_out()
         return lines
 
-    def print_tree_collections(self, collections, line_pre=""):
+    def print_tree_collections(self, collections):
         lines = []
         for collection in collections:
-            msg = line_pre + "collection '{}' ".format(collection.name)
+            msg = self.line_pre + "collection '{}' ".format(collection.name)
             if not collection.hide_viewport and not collection.hide_render:
                 lines.append(msg)
-                lines.extend(self.print_tree_collection(collection, line_pre))
+                lines.extend(self.print_tree_collection(collection))
             else:
                 lines.append(msg + "ignored: not visible")
         return lines
 
     def print_collection_and_object_tree(self):
         # new approach: traverse collection tree
+        self.line_indent = "    "
+        self.line_indent_level = 0
         lines = self.print_tree_collections(bpy.context.scene.collection.children)
         print("")
         print("#" * 42)
@@ -1045,8 +1142,8 @@ ${entity}
         print("#" * 42)
         print("")
 
-    ##
-
+    ##########################################
+    # magic comments
     def magic_comments_find_and_parse(self, input_text):
         print("magic_comments_find_and_parse...")
         magic_comments_list = []
@@ -1142,6 +1239,8 @@ ${entity}
         for magic_comment in magic_comments_list:
             input_text = self.magic_comment_handle(magic_comment, input_text)
         return input_text
+
+    ##########################################
 
     def get_shadow(self):
         showcast_shadows = "false"
@@ -1368,7 +1467,7 @@ ${entity}
 
         self.print_collection_and_object_tree()
 
-        # self.traverse_collection_and_object_tree()
+        self.traverse_collection_and_object_tree()
 
         self.handle_sky()
 
