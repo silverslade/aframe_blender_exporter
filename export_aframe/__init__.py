@@ -62,15 +62,15 @@ class ExportAframe(object):
 
         self.scalefactor = 2
 
-        self.line_indent = "    "
+        self.line_indent_spacer = "    "
         self.line_indent_level = 0
 
     @property
-    def line_pre(self):
-        return self.line_indent * self.line_indent_level
+    def line_indent(self):
+        return self.line_indent_spacer * self.line_indent_level
 
     def line_indent_reset(self):
-        self.line_indent = "    "
+        self.line_indent_spacer = "    "
         self.line_indent_level = 0
 
     def line_indent_level_in(self):
@@ -436,8 +436,20 @@ ${entity}
     def add_resouce_icons(self):
         _resources = [
             # dest_path, filename, overwrite, include_set, add_asset
-            [constants.PATH_RESOURCES, "play.png", False, ["default"], "icon-play"],
-            [constants.PATH_RESOURCES, "pause.png", False, ["default"], "icon-pause"],
+            [
+                constants.PATH_RESOURCES,
+                "play.png",
+                False,
+                ["default"],
+                "icon-play",
+            ],
+            [
+                constants.PATH_RESOURCES,
+                "pause.png",
+                False,
+                ["default"],
+                "icon-pause",
+            ],
             [
                 constants.PATH_RESOURCES,
                 "play-skip-back.png",
@@ -445,7 +457,13 @@ ${entity}
                 ["default"],
                 "icon-play-skip-back",
             ],
-            [constants.PATH_RESOURCES, "mute.png", False, ["default"], "icon-mute"],
+            [
+                constants.PATH_RESOURCES,
+                "mute.png",
+                False,
+                ["default"],
+                "icon-mute",
+            ],
             [
                 constants.PATH_RESOURCES,
                 "volume-low.png",
@@ -536,6 +554,21 @@ ${entity}
         self.add_resouce_example_media()
 
     ##########################################
+    # lightmap
+    def lightmap_files_prepare(self):
+        self.lightmap_files = os.listdir(
+            os.path.join(self.base_path, constants.PATH_LIGHTMAPS)
+        )
+        print(self.line_indent + "[LIGHTMAP] Found Lightmap files: ")
+        self.line_indent_level_in()
+        if len(self.lightmap_files) < 0:
+            for file in self.lightmap_files:
+                print(self.line_indent + "- '{}'".format(file))
+        else:
+            print(self.line_indent + "- no files found.")
+        self.line_indent_level_out()
+
+    ##########################################
     # ...
     def prepare_entity_str(self, entity_attributes):
         # print("prepare_entity_str")
@@ -554,7 +587,7 @@ ${entity}
 
         # prepare entity lines
         entity_lines = []
-        entity_preline_sub = "    "
+        entity_preline_sub = self.line_indent_spacer
         entity_lines.append("<a-entity ")
         for item in entity_attributes:
             entity_lines.append("{}{}".format(entity_preline_sub, item))
@@ -564,10 +597,9 @@ ${entity}
         entity_lines.append("</a-entity>")
 
         # build entity string
-        entity_preline_base = "            "
         entity_str = ""
         for item in entity_lines:
-            entity_str += "{}{}\n".format(entity_preline_base, item)
+            entity_str += "{}{}\n".format(self.line_indent, item)
 
         return entity_str
 
@@ -576,14 +608,14 @@ ${entity}
         mesh_name = obj.data.name
         # check if we have exported this mesh already...
         # print("  self.exported_meshes", self.exported_meshes)
-        print("  mesh_name", mesh_name)
+        print(self.line_indent + "* mesh_name", mesh_name)
         if mesh_name not in self.exported_meshes:
             # export as gltf
             # print("obj", obj)
             filename = os.path.join(
                 self.base_path, constants.PATH_ASSETS, mesh_name
             )  # + '.glft' )
-            print("  filename", filename)
+            print(self.line_indent + "* filename", filename)
             location = obj.location.copy()
             rotation_euler = obj.rotation_euler.copy()
             # print("  obj.location", obj.location)
@@ -593,13 +625,20 @@ ${entity}
             # print("  obj.location", obj.location)
             # print("  obj.rotation_euler", obj.rotation_euler)
 
+            print(b_helper.colors.fg.lightblue)
             bpy.ops.export_scene.gltf(
                 filepath=filename,
                 export_format="GLTF_EMBEDDED",
                 use_selection=True,
+                export_animations=True,
+                export_nla_strips=True,
+                # export_force_sampling=True,
+                export_frame_range=False,
                 # export_apply=True,
+                # export_lights=True
                 export_apply=self.scene.export_apply_modifiers,
             )
+            print(b_helper.colors.reset, end="")
 
             obj.location = location
             obj.rotation_euler = rotation_euler
@@ -632,79 +671,38 @@ ${entity}
         actualposition = "0 0 0"
         actualrotation = "0 0 0"
         actualscale = "1 1 1"
-        if "rotation_mode" in obj:
+        if hasattr(obj, "location"):
+            # bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
+            # bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
+            location = obj.location.copy()
+            actualposition = "{x} {z} {y}".format(
+                x=location.x,
+                z=location.z,
+                y=-location.y,
+            )
+        if hasattr(obj, "scale"):
+            actualscale = "{x} {z} {y}".format(
+                x=self.scalefactor * obj.scale.x,
+                z=self.scalefactor * obj.scale.z,
+                y=self.scalefactor * obj.scale.y,
+            )
+        if hasattr(obj, "rotation_mode"):
             # first reset rotation_mode to QUATERNION (otherwise it can have buggy side-effects)
             obj.rotation_mode = "QUATERNION"
             # force rotation_mode to YXZ to be compatible with our export
             obj.rotation_mode = "YXZ"
-
-            # bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
-            # bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
-            location = obj.location.copy()
             rotation = obj.rotation_euler.copy()
-
-            actualposition = (
-                str(location.x) + " " + str(location.z) + " " + str(-location.y)
-            )
-            actualscale = (
-                str(self.scalefactor * bpy.data.objects[obj.name].scale.x)
-                + " "
-                + str(self.scalefactor * bpy.data.objects[obj.name].scale.y)
-                + " "
-                + str(self.scalefactor * bpy.data.objects[obj.name].scale.z)
-            )
             # https://aframe.io/docs/1.2.0/components/rotation.html#sidebar
             # pi = 22.0/7.0
-            # actualrotation = (
-            #     str(
-            #         ((bpy.data.objects[obj.name].rotation_euler.x) / (2 * pi) * 360)
-            #         - 90
-            #     )
-            #     + " "
-            #     + str(
-            #         ((bpy.data.objects[obj.name].rotation_euler.z) / (2 * pi) * 360)
-            #         - 0
-            #     )
-            #     + " "
-            #     + str(
-            #         ((bpy.data.objects[obj.name].rotation_euler.y) / (2 * pi) * 360)
-            #         + 90
-            #     )
-            # )
-            # actualrotation = (
-            #     str(bpy.data.objects[obj.name].rotation_euler.x)
-            #     + " "
-            #     + str(bpy.data.objects[obj.name].rotation_euler.z)
-            #     + " "
-            #     + str(bpy.data.objects[obj.name].rotation_euler.y)
-            # )
-            # actualrotation = (
-            #     str(
-            #         math.degrees(
-            #             -89.99 + bpy.data.objects[obj.name].rotation_euler.x
-            #         )
-            #     )
-            #     + " "
-            #     + str(
-            #         90 + math.degrees(bpy.data.objects[obj.name].rotation_euler.y)
-            #     )
-            #     + " "
-            #     + str(
-            #         -90 + math.degrees(bpy.data.objects[obj.name].rotation_euler.z)
-            #     )
-            # )
-            actualrotation = (
-                str(math.degrees(rotation.x))
-                + " "
-                + str(math.degrees(rotation.z))
-                + " "
-                + str(math.degrees(-rotation.y))
+            actualrotation = "{x} {z} {y}".format(
+                x=math.degrees(rotation.x),
+                z=math.degrees(rotation.z),
+                y=math.degrees(-rotation.y),
             )
-            # actualrotation = "0 " + str(math.degrees(rotation.z)) + " 0"
 
-        print("  actualposition", actualposition)
-        print("  actualrotation", actualrotation)
-        print("  actualscale", actualscale)
+        # print(self.line_indent + "* actualposition", actualposition)
+        # print(self.line_indent + "* actualrotation", actualrotation)
+        # print(self.line_indent + "* actualscale", actualscale)
         return actualposition, actualrotation, actualscale
 
     def handle_propertie_video(self, *, prop, obj):
@@ -811,18 +809,32 @@ ${entity}
         #    if obj.name+"_baked" in img.name and img.has_data:
         #       print("ok")
         #       baked = 'light-map-geometry="path: lightmaps/'+img.name+'"'
-        print("[LIGHTMAP] Searching Lightmap for object [" + obj.name + "_baked" + "]")
+        obj_lightmap = "{obj_name}_baked".format(obj_name=obj.name)
+        print(
+            "{line_indent}* searching Lightmap '{obj_lightmap}'".format(
+                line_indent=self.line_indent,
+                obj_lightmap=obj_lightmap,
+            )
+        )
+        self.line_indent_level_in()
         for file in self.lightmap_files:
-            if obj.name + "_baked" in file:
-                print("[LIGHTMAP] Found lightmap: " + file)
-                entity_attributes.append(
-                    'light-map-geometry="path: lightmaps/{}; intensity:{};"'.format(
-                        file, self.scene.f_lightMapIntensity
+            if obj_lightmap in file:
+                print(
+                    "{line_indent}- found lightmap: '{file}'".format(
+                        line_indent=self.line_indent,
+                        file=file,
                     )
                 )
+                entity_attributes.append(
+                    'light-map-geometry="path: lightmaps/{}; intensity:{};"'.format(
+                        file,
+                        self.scene.f_lightMapIntensity,
+                    )
+                )
+        self.line_indent_level_out()
 
     def export_object(self, *, obj, entity_attributes):
-        print("export_object", obj)
+        print(self.line_indent + "export_object", obj)
         # prepare export
         mesh_name = ""
         if not any(item.startswith(("image", "video")) for item in entity_attributes):
@@ -835,7 +847,11 @@ ${entity}
             )
         return entity_attributes
 
-    def export_entity_prepare(self, *, obj, entity_attributes=[]):
+    def export_entity_prepare(self, *, obj, entity_attributes):
+        # print(
+        #     self.line_indent + "'export_entity_prepare' - entity_attributes:",
+        #     entity_attributes,
+        # )
         actualposition, actualrotation, actualscale = self.get_object_coordinates(obj)
 
         for prop in obj.keys():
@@ -852,11 +868,14 @@ ${entity}
         shadow_cast = "false"
         if self.scene.b_cast_shadows:
             shadow_cast = "true"
-
+        obj_name = obj.name
+        # if we have a colleciton we need to make the name unique
+        if isinstance(obj, bpy.types.Collection):
+            obj_name = "collection__" + obj_name
         entity_str = self.prepare_entity_str(entity_attributes)
         # replace placeholders with values
         entity_str = entity_str.format(
-            obj_name=obj.name,
+            obj_name=obj_name,
             position=actualposition,
             rotation=actualrotation,
             scale="1 1 1",
@@ -870,21 +889,10 @@ ${entity}
         )
         return entity_str
 
-    def export_prepare(self):
-        self.exported_obj = 0
-        self.videocount = 0
-        self.imagecount = 0
-
-        self.lightmap_files = os.listdir(
-            os.path.join(self.base_path, constants.PATH_LIGHTMAPS)
-        )
-        for file in self.lightmap_files:
-            print("[LIGHTMAP] Found Lightmap file: " + file)
-
     ##########################################
     # traverse collection and object tree
     def traverse_object(self, obj):
-        print("traverse_object", obj)
+        # print(self.line_indent + "* traverse_object", obj)
         lines = []
 
         bpy.ops.object.select_all(action="DESELECT")
@@ -896,11 +904,13 @@ ${entity}
         entity_content = ""
 
         if (obj.type == "MESH") or (obj.type == "ARMATURE"):
-            lines.append(self.line_pre + "export_object '{}'".format(obj.name))
+            lines.append(self.line_indent + "export_object '{}'".format(obj.name))
             if not self.print_only:
+                print(self.line_indent + "entity_attributes:", entity_attributes)
                 self.export_object(obj=obj, entity_attributes=entity_attributes)
+                print(self.line_indent + "entity_attributes:", entity_attributes)
         elif obj.type == "EMPTY":
-            lines.append(self.line_pre + "empty '{}'".format(obj.name))
+            lines.append(self.line_indent + "empty '{}'".format(obj.name))
             # check for children
             if obj.children:
                 self.line_indent_level_in()
@@ -921,18 +931,20 @@ ${entity}
             print(msg)
             lines.append(msg)
 
-        print("traverse_object - about ready...")
-        print("traverse_object - entity_attributes:", entity_attributes)
-        # all things prepared. convert to string...
+        # print(
+        #     self.line_indent + "* traverse_object - entity_attributes:",
+        #     entity_attributes,
+        # )
         entity_str = self.export_entity_prepare(
             obj=obj,
             entity_attributes=entity_attributes,
         )
+        # all things prepared. convert to string...
         entity_str = self.export_entity_finalise(
             entity_str=entity_str,
             entity_content=entity_content,
         )
-        print("traverse_object - entity_str", entity_str)
+        # print(self.line_indent + "traverse_object - entity_str", entity_str)
         # deselect object
         obj.select_set(state=False)
         return entity_str, lines
@@ -942,7 +954,7 @@ ${entity}
         entity_content = ""
         lines = []
         for obj in objects:
-            msg = self.line_pre + "object '{}' ".format(obj.name)
+            msg = self.line_indent + "object '{}' ".format(obj.name)
             # ignore non direct childs
             if not obj.parent:
                 if obj.type not in exclusion_obj_types:
@@ -984,13 +996,14 @@ ${entity}
 
         # prepare
         lines = []
-        # entity_attributes = []
+        entity_attributes = []
         entity_content = ""
 
         # create entity for collection
+        print(self.line_indent + "create entity for collection: prepare")
         entity_str = self.export_entity_prepare(
             obj=collection,
-            # entity_attributes=entity_attributes,
+            entity_attributes=entity_attributes,
         )
         # self.print_only
 
@@ -1014,7 +1027,7 @@ ${entity}
 
         # all things prepared.
         # print("-- traverse_collection '{}' - prepare final..".format(collection.name))
-        # print("traverse_collection entity_content", entity_content)
+        # print(self.line_indent + "traverse_collection entity_content", entity_content)
         # set entitty content
         entity_str = self.export_entity_finalise(
             entity_str=entity_str,
@@ -1027,11 +1040,12 @@ ${entity}
         lines = []
         entity_str = ""
         for collection in collections:
-            msg = self.line_pre + "collection '{}' ".format(collection.name)
+            msg = self.line_indent + "collection '{}' ".format(collection.name)
             if not collection.hide_viewport and not collection.hide_render:
                 lines.append(msg)
                 print(msg)
-                entity_str, lines_temp = self.traverse_collection(collection)
+                entity_str_temp, lines_temp = self.traverse_collection(collection)
+                entity_str += entity_str_temp
                 lines.extend(lines_temp)
             else:
                 msg += "ignored: not visible"
@@ -1043,6 +1057,13 @@ ${entity}
         # new approach: traverse collection tree
         self.print_only = print_only
         self.line_indent_reset()
+        self.exported_obj = 0
+        self.videocount = 0
+        self.imagecount = 0
+        print("")
+        print("#" * 42)
+        print("")
+        self.lightmap_files_prepare()
         entity_str, lines = self.traverse_collections(
             bpy.context.scene.collection.children
         )
@@ -1051,92 +1072,10 @@ ${entity}
         print("")
         print("#" * 42)
         print("")
-        print("exported objects: ")
-        print("\n".join(lines))
-        print("")
-        print("#" * 42)
-        print("")
-
-    ##########################################
-    # print collection and object tree
-    def print_tree_object(self, obj, line_pre=""):
-        lines = []
-        if (obj.type == "MESH") or (obj.type == "ARMATURE"):
-            lines.append(self.line_pre + "export_object '{}'".format(obj.name))
-        elif obj.type == "EMPTY":
-            lines.append(self.line_pre + "empty '{}'".format(obj.name))
-            if obj.children:
-                self.line_indent_level_in()
-                lines.extend(self.print_tree_objects(obj.children))
-                self.line_indent_level_out()
+        if self.print_only:
+            print("exportable objects: ")
         else:
-            lines.append(
-                line_pre
-                + b_helper.colors.fg.red
-                + "object '{}' of type '{}' currently not implemented. ".format(
-                    obj.name, obj.type
-                )
-                + b_helper.colors.reset
-            )
-        return lines
-
-    def print_tree_objects(self, objects):
-        exclusion_obj_types = ["CAMERA", "LIGHT"]
-        lines = []
-        for obj in objects:
-            msg = self.line_pre + "object '{}' ".format(obj.name)
-            # ignore non direct childs
-            if not obj.parent:
-                if obj.type not in exclusion_obj_types:
-                    if not obj.hide_viewport and not obj.hide_render:
-                        lines.extend(self.print_tree_object(obj))
-                    else:
-                        lines.append(msg + "ignored: not visible")
-                else:
-                    lines.append(
-                        b_helper.colors.fg.yellow
-                        + msg
-                        + "ignored: not exportable / not implemented"
-                        + b_helper.colors.reset
-                    )
-            else:
-                lines.append(msg + "ignored for now - has parent.")
-        return lines
-
-    def print_tree_collection(self, collection):
-        lines = []
-        # check for sub collections
-        if len(collection.children) > 0:
-            # recusvie traversing..
-            self.line_indent_level_in()
-            lines.extend(self.print_tree_collections(collection.children))
-            self.line_indent_level_out()
-        # handle direct objects
-        self.line_indent_level_in()
-        lines.extend(self.print_tree_objects(collection.objects))
-        self.line_indent_level_out()
-        return lines
-
-    def print_tree_collections(self, collections):
-        lines = []
-        for collection in collections:
-            msg = self.line_pre + "collection '{}' ".format(collection.name)
-            if not collection.hide_viewport and not collection.hide_render:
-                lines.append(msg)
-                lines.extend(self.print_tree_collection(collection))
-            else:
-                lines.append(msg + "ignored: not visible")
-        return lines
-
-    def print_collection_and_object_tree(self):
-        # new approach: traverse collection tree
-        self.line_indent = "    "
-        self.line_indent_level = 0
-        lines = self.print_tree_collections(bpy.context.scene.collection.children)
-        print("")
-        print("#" * 42)
-        print("")
-        print("print_collection_and_object_tree: ")
+            print("exported objects: ")
         print("\n".join(lines))
         print("")
         print("#" * 42)
@@ -1346,7 +1285,7 @@ ${entity}
         # print(self.assets)
         all_assets = ""
         for x in self.assets:
-            all_assets += x
+            all_assets += x + "\n"
 
         all_entities = ""
         for y in self.entities:
@@ -1462,10 +1401,6 @@ ${entity}
         self.create_diretories()
 
         self.resouce_handling()
-
-        self.export_prepare()
-
-        self.print_collection_and_object_tree()
 
         self.traverse_collection_and_object_tree()
 
