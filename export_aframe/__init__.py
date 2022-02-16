@@ -50,7 +50,7 @@ class ExportAframe(object):
         self.lights = []
         self.showstats = ""
 
-        self.exported_meshes = []
+        self.exported_gltf_objects = []
         self.script_file = None
         self.script_directory = None
         self.lightmap_files = None
@@ -603,19 +603,21 @@ ${entity}
 
         return entity_str
 
-    def get_or_export_mesh(self, obj):
+    def get_or_export_obj(self, obj, mesh_name=None):
         filename = None
-        mesh_name = obj.data.name
-        # check if we have exported this mesh already...
-        # print("  self.exported_meshes", self.exported_meshes)
-        print(self.line_indent + "* mesh_name", mesh_name)
-        if mesh_name not in self.exported_meshes:
+        gltf_name = obj.name
+        if mesh_name:
+            gltf_name = mesh_name
+        # check if we have exported this already...
+        # print("  self.exported_gltf_objects", self.exported_gltf_objects)
+        print(self.line_indent + "* gltf_name", gltf_name)
+        if gltf_name not in self.exported_gltf_objects:
             # export as gltf
             # print("obj", obj)
             filename = os.path.join(
-                self.base_path, constants.PATH_ASSETS, mesh_name
+                self.base_path, constants.PATH_ASSETS, gltf_name
             )  # + '.glft' )
-            print(self.line_indent + "* filename", filename)
+            print("{}* filename {}.gltf".format(self.line_indent, filename))
             location = obj.location.copy()
             rotation_euler = obj.rotation_euler.copy()
             # print("  obj.location", obj.location)
@@ -634,6 +636,7 @@ ${entity}
                 export_nla_strips=True,
                 # export_force_sampling=True,
                 export_frame_range=False,
+                # use_frame_range=False,
                 # export_apply=True,
                 # export_lights=True
                 export_apply=self.scene.export_apply_modifiers,
@@ -647,15 +650,15 @@ ${entity}
             # print("  obj.location", obj.location)
             # print("  obj.rotation_euler", obj.rotation_euler)
 
-            self.exported_meshes.append(mesh_name)
+            self.exported_gltf_objects.append(gltf_name)
 
             # single line format
             self.assets.append(
                 "            <a-asset-item "
-                'id="{mesh_name}" '
-                'src="./assets/{mesh_name}.gltf" '
-                "></a-asset-item>\n"
-                "".format(mesh_name=mesh_name)
+                'id="{gltf_name}" '
+                'src="./assets/{gltf_name}.gltf" '
+                "></a-asset-item>"
+                "".format(gltf_name=gltf_name)
             )
             # multiline format
             # self.assets.append(
@@ -665,7 +668,29 @@ ${entity}
             #     "                ></a-asset-item>\n"
             #     "".format(obj_name=obj.name)
             # )
-        return mesh_name
+        return gltf_name
+
+    def collection_hidden_dict_traverse(self, view_layers):
+        for vl in view_layers:
+            self.collection_hidden_dict[vl.name] = vl.hide_viewport
+            self.collection_hidden_dict_traverse(vl.children)
+
+    def collection_hidden_dict_update(self):
+        self.collection_hidden_dict = {}
+        self.collection_hidden_dict_traverse(
+            bpy.context.view_layer.layer_collection.children
+        )
+
+    def get_object_visible(self, obj):
+        hidden = False
+        hidden = hidden or obj.hide_viewport
+        hidden = hidden or obj.hide_render
+        if isinstance(obj, bpy.types.Collection):
+            if obj.name in self.collection_hidden_dict:
+                hidden = hidden or self.collection_hidden_dict[obj.name]
+        elif isinstance(obj, bpy.types.Object):
+            hidden = hidden or obj.hide_get()
+        return not hidden
 
     def get_object_coordinates(self, obj):
         actualposition = "0 0 0"
@@ -833,17 +858,17 @@ ${entity}
                 )
         self.line_indent_level_out()
 
-    def export_object(self, *, obj, entity_attributes):
-        print(self.line_indent + "export_object", obj)
+    def export_object(self, *, obj, entity_attributes, mesh_name=None):
+        print(self.line_indent + "* export_object", obj)
         # prepare export
-        mesh_name = ""
+        gltf_name = ""
         if not any(item.startswith(("image", "video")) for item in entity_attributes):
             self.handle_lightmap_things(obj=obj, entity_attributes=entity_attributes)
             #####################
-            # handle mesh
-            mesh_name = self.get_or_export_mesh(obj)
+            # handle gltf export
+            gltf_name = self.get_or_export_obj(obj, mesh_name)
             entity_attributes.append(
-                'gltf-model="#{mesh_name}"\n'.format(mesh_name=mesh_name)
+                'gltf-model="#{gltf_name}"'.format(gltf_name=gltf_name)
             )
         return entity_attributes
 
@@ -903,12 +928,24 @@ ${entity}
         entity_attributes = []
         entity_content = ""
 
-        if (obj.type == "MESH") or (obj.type == "ARMATURE"):
-            lines.append(self.line_indent + "export_object '{}'".format(obj.name))
+        if obj.type == "MESH":
+            lines.append(
+                self.line_indent + "export_object '{}' (MESH)".format(obj.name)
+            )
             if not self.print_only:
-                print(self.line_indent + "entity_attributes:", entity_attributes)
+                # print(self.line_indent + "entity_attributes:", entity_attributes)
+                self.export_object(
+                    obj=obj,
+                    entity_attributes=entity_attributes,
+                    mesh_name=obj.data.name,
+                )
+                # print(self.line_indent + "entity_attributes:", entity_attributes)
+        elif obj.type == "ARMATURE":
+            lines.append(
+                self.line_indent + "export_object '{}' (ARMATURE)".format(obj.name)
+            )
+            if not self.print_only:
                 self.export_object(obj=obj, entity_attributes=entity_attributes)
-                print(self.line_indent + "entity_attributes:", entity_attributes)
         elif obj.type == "EMPTY":
             lines.append(self.line_indent + "empty '{}'".format(obj.name))
             # check for children
@@ -918,9 +955,17 @@ ${entity}
                 lines.extend(lines_temp)
                 entity_content += entity_content_temp
                 self.line_indent_level_out()
+            elif obj.instance_type is not None:
+                lines.append(
+                    self.line_indent
+                    + "export_object '{}' (EMPTY - instance)".format(obj.name)
+                )
+                if not self.print_only:
+                    self.export_object(obj=obj, entity_attributes=entity_attributes)
         else:
             msg = (
-                b_helper.colors.fg.red
+                self.line_indent
+                + b_helper.colors.fg.red
                 + (
                     "object '{}' of type '{}' currently not implemented. "
                     "we have only created a empty placeholder."
@@ -955,10 +1000,10 @@ ${entity}
         lines = []
         for obj in objects:
             msg = self.line_indent + "object '{}' ".format(obj.name)
-            # ignore non direct childs
-            if not obj.parent:
+            if self.get_object_visible(obj):
                 if obj.type not in exclusion_obj_types:
-                    if not obj.hide_viewport and not obj.hide_render:
+                    # ignore non direct childs
+                    if not obj.parent:
                         msg += "export.."
                         print(msg)
                         lines.append(msg)
@@ -969,9 +1014,9 @@ ${entity}
                         entity_content += entity_content_temp
                         self.line_indent_level_out()
 
-                        self.exported_obj += 1
+                        self.entities_created += 1
                     else:
-                        msg += "ignored: not visible"
+                        msg += "ignored: has parent."
                         print(msg)
                         lines.append(msg)
                 else:
@@ -984,7 +1029,7 @@ ${entity}
                     print(msg)
                     lines.append(msg)
             else:
-                msg += "ignored: has parent."
+                msg += "ignored: not visible"
                 print(msg)
                 lines.append(msg)
         bpy.ops.object.select_all(action="DESELECT")
@@ -1033,7 +1078,7 @@ ${entity}
             entity_str=entity_str,
             entity_content=entity_content,
         )
-        self.exported_obj += 1
+        self.entities_created += 1
         return entity_str, lines
 
     def traverse_collections(self, collections):
@@ -1041,7 +1086,7 @@ ${entity}
         entity_str = ""
         for collection in collections:
             msg = self.line_indent + "collection '{}' ".format(collection.name)
-            if not collection.hide_viewport and not collection.hide_render:
+            if self.get_object_visible(collection):
                 lines.append(msg)
                 print(msg)
                 entity_str_temp, lines_temp = self.traverse_collection(collection)
@@ -1057,9 +1102,10 @@ ${entity}
         # new approach: traverse collection tree
         self.print_only = print_only
         self.line_indent_reset()
-        self.exported_obj = 0
+        self.entities_created = 0
         self.videocount = 0
         self.imagecount = 0
+        self.collection_hidden_dict_update()
         print("")
         print("#" * 42)
         print("")
@@ -1072,10 +1118,7 @@ ${entity}
         print("")
         print("#" * 42)
         print("")
-        if self.print_only:
-            print("exportable objects: ")
-        else:
-            print("exported objects: ")
+        print("project tree: ")
         print("\n".join(lines))
         print("")
         print("#" * 42)
@@ -1378,7 +1421,7 @@ ${entity}
         self.assets = []
         self.entities = []
         self.lights = []
-        self.exported_meshes = []
+        self.exported_gltf_objects = []
 
         self.scene.s_output = "exporting..."
         self.script_file = os.path.realpath(__file__)
@@ -1428,7 +1471,15 @@ ${entity}
             with open(extra_output_full_path, "w") as file:
                 file.write(extra_output_content)
 
-        message = str(self.exported_obj) + " objects exported"
+        message = (
+            "Export done.\n"
+            "  entities created: {}\n"
+            "  gltf exports: {} "
+            "".format(
+                self.entities_created,
+                len(self.exported_gltf_objects),
+            )
+        )
         self.scene.s_output = message
         self.report({"INFO"}, message)
         return {"FINISHED"}
