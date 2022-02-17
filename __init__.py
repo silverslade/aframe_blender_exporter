@@ -302,6 +302,8 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.prop(scene, "s_extra_output_file")
             box.prop(scene, "s_extra_output_target")
             box.prop(scene, "e_ressource_set")
+            box.prop(scene, "b_float_precision_min")
+            box.prop(scene, "b_float_precision_max")
             box.operator("aframe.clear_asset_dir", text="Clear Assets Directory")
 
         row = layout.row(align=True)
@@ -615,6 +617,20 @@ _props = [
         "define set of resources to copy to output folder",
         # default=None,
         "default",
+    ),
+    (
+        "int",
+        "b_float_precision_max",
+        "float precision max",
+        "maximal float precision for output file",
+        6,
+    ),
+    (
+        "int",
+        "b_float_precision_min",
+        "float precision min",
+        "minimal float precision for output file",
+        1,
     ),
     ("str", "s_output", "output", "output export", "output"),
     (

@@ -22,6 +22,24 @@ from .. import constants
 # from .material import MaterialManager
 
 
+# helper
+def format_float(x, precision=6, min=1):
+    # inspired by
+    # https://stackoverflow.com/a/65721367/574981
+    # https://stackoverflow.com/questions/2440692/formatting-floats-without-trailing-zeros
+    template_clean = "{{:.{}f}}".format(precision)
+    x_clean = template_clean.format(x).rstrip("0").rstrip(".")
+    template_min = "{{:.{}f}}".format(min)
+    x_min = template_min.format(x)
+    print("x_clean", x_clean)
+    print("x_min", x_min)
+    return max(x_clean, x_min, key=len)
+
+
+##########################################
+# class
+
+
 class ExportAframe(object):
     """Export Scene to A-Frame Website."""
 
@@ -64,6 +82,13 @@ class ExportAframe(object):
 
         self.line_indent_spacer = "    "
         self.line_indent_level = 0
+
+        # self.float_precision_max = 6
+        # self.float_precision_min = 1
+        # if hasattr(scene, "b_float_precision_max"):
+        #     self.float_precision_max = scene.b_float_precision_max
+        # if hasattr(scene, "b_float_precision_min"):
+        #     self.float_precision_min = scene.b_float_precision_min
 
     @property
     def line_indent(self):
@@ -554,6 +579,15 @@ ${entity}
         self.add_resouce_example_media()
 
     ##########################################
+    # helper
+    def format_float(self, x):
+        return format_float(
+            x,
+            precision=self.scene.b_float_precision_max,
+            min=self.scene.b_float_precision_min,
+        )
+
+    ##########################################
     # lightmap
     def lightmap_files_prepare(self):
         self.lightmap_files = os.listdir(
@@ -634,12 +668,11 @@ ${entity}
                 use_selection=True,
                 export_animations=True,
                 export_nla_strips=True,
-                # export_force_sampling=True,
+                export_force_sampling=True,
                 export_frame_range=False,
-                # use_frame_range=False,
                 # export_apply=True,
-                # export_lights=True
                 export_apply=self.scene.export_apply_modifiers,
+                # export_lights=True
             )
             print(b_helper.colors.reset, end="")
 
@@ -701,15 +734,15 @@ ${entity}
             # bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
             location = obj.location.copy()
             actualposition = "{x} {z} {y}".format(
-                x=location.x,
-                z=location.z,
-                y=-location.y,
+                x=self.format_float(location.x),
+                z=self.format_float(location.z),
+                y=self.format_float(-location.y),
             )
         if hasattr(obj, "scale"):
             actualscale = "{x} {z} {y}".format(
-                x=self.scalefactor * obj.scale.x,
-                z=self.scalefactor * obj.scale.z,
-                y=self.scalefactor * obj.scale.y,
+                x=self.format_float(self.scalefactor * obj.scale.x),
+                z=self.format_float(self.scalefactor * obj.scale.z),
+                y=self.format_float(self.scalefactor * obj.scale.y),
             )
         if hasattr(obj, "rotation_mode"):
             # first reset rotation_mode to QUATERNION (otherwise it can have buggy side-effects)
@@ -720,9 +753,9 @@ ${entity}
             # https://aframe.io/docs/1.2.0/components/rotation.html#sidebar
             # pi = 22.0/7.0
             actualrotation = "{x} {z} {y}".format(
-                x=math.degrees(rotation.x),
-                z=math.degrees(rotation.z),
-                y=math.degrees(-rotation.y),
+                x=self.format_float(math.degrees(rotation.x)),
+                z=self.format_float(math.degrees(rotation.z)),
+                y=self.format_float(math.degrees(-rotation.y)),
             )
 
         # print(self.line_indent + "* actualposition", actualposition)
@@ -941,17 +974,31 @@ ${entity}
                 )
                 # print(self.line_indent + "entity_attributes:", entity_attributes)
         elif obj.type == "ARMATURE":
-            lines.append(
-                self.line_indent + "export_object '{}' (ARMATURE)".format(obj.name)
-            )
+            lines.append(self.line_indent + "add '{}' (ARMATURE)".format(obj.name))
             if not self.print_only:
-                self.export_object(obj=obj, entity_attributes=entity_attributes)
+                # self.export_object(obj=obj, entity_attributes=entity_attributes)
+                if obj.children:
+                    lines.append(self.line_indent + "process ARMATURE childs..")
+                    self.line_indent_level_in()
+                    entity_content_temp, lines_temp = self.traverse_objects(
+                        obj.children,
+                        allow_childs=True,
+                    )
+                    lines.extend(lines_temp)
+                    entity_content += entity_content_temp
+                    self.line_indent_level_out()
+
+                # HERE GEHTS WEITER!!!!
+
         elif obj.type == "EMPTY":
             lines.append(self.line_indent + "empty '{}'".format(obj.name))
             # check for children
             if obj.children:
                 self.line_indent_level_in()
-                entity_content_temp, lines_temp = self.traverse_objects(obj.children)
+                entity_content_temp, lines_temp = self.traverse_objects(
+                    obj.children,
+                    allow_childs=True,
+                )
                 lines.extend(lines_temp)
                 entity_content += entity_content_temp
                 self.line_indent_level_out()
@@ -994,7 +1041,7 @@ ${entity}
         obj.select_set(state=False)
         return entity_str, lines
 
-    def traverse_objects(self, objects):
+    def traverse_objects(self, objects, allow_childs=False):
         exclusion_obj_types = ["CAMERA", "LIGHT"]
         entity_content = ""
         lines = []
@@ -1003,7 +1050,7 @@ ${entity}
             if self.get_object_visible(obj):
                 if obj.type not in exclusion_obj_types:
                     # ignore non direct childs
-                    if not obj.parent:
+                    if not (obj.parent and not allow_childs):
                         msg += "export.."
                         print(msg)
                         lines.append(msg)
