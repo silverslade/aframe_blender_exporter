@@ -31,8 +31,6 @@ def format_float(x, precision=6, min=1):
     x_clean = template_clean.format(x).rstrip("0").rstrip(".")
     template_min = "{{:.{}f}}".format(min)
     x_min = template_min.format(x)
-    print("x_clean", x_clean)
-    print("x_min", x_min)
     return max(x_clean, x_min, key=len)
 
 
@@ -903,7 +901,7 @@ ${entity}
             entity_attributes.append(
                 'gltf-model="#{gltf_name}"'.format(gltf_name=gltf_name)
             )
-        return entity_attributes
+        return gltf_name
 
     def export_entity_prepare(self, *, obj, entity_attributes):
         # print(
@@ -962,19 +960,17 @@ ${entity}
         entity_content = ""
 
         if obj.type == "MESH":
-            lines.append(
-                self.line_indent + "export_object '{}' (MESH)".format(obj.name)
-            )
             if not self.print_only:
                 # print(self.line_indent + "entity_attributes:", entity_attributes)
-                self.export_object(
+                gltf_name = self.export_object(
                     obj=obj,
                     entity_attributes=entity_attributes,
                     mesh_name=obj.data.name,
                 )
                 # print(self.line_indent + "entity_attributes:", entity_attributes)
+            lines.append(self.line_indent + "MESH  gltf_name:'{}'".format(gltf_name))
         elif obj.type == "ARMATURE":
-            lines.append(self.line_indent + "add '{}' (ARMATURE)".format(obj.name))
+            lines.append(self.line_indent + "ARMATURE".format(obj.name))
             if not self.print_only:
                 # self.export_object(obj=obj, entity_attributes=entity_attributes)
                 if obj.children:
@@ -1003,10 +999,7 @@ ${entity}
                 entity_content += entity_content_temp
                 self.line_indent_level_out()
             elif obj.instance_type is not None:
-                lines.append(
-                    self.line_indent
-                    + "export_object '{}' (EMPTY - instance)".format(obj.name)
-                )
+                lines.append(self.line_indent + "EMPTY - instance")
                 if not self.print_only:
                     self.export_object(obj=obj, entity_attributes=entity_attributes)
         else:
@@ -1046,7 +1039,7 @@ ${entity}
         entity_content = ""
         lines = []
         for obj in objects:
-            msg = self.line_indent + "object '{}' ".format(obj.name)
+            msg = self.line_indent + "object '{}' ({}) ".format(obj.name, obj.type)
             if self.get_object_visible(obj):
                 if obj.type not in exclusion_obj_types:
                     # ignore non direct childs
@@ -1070,7 +1063,7 @@ ${entity}
                     msg = (
                         b_helper.colors.fg.yellow
                         + msg
-                        + "ignored: not exportable / not implemented"
+                        + "ignored: not implemented"
                         + b_helper.colors.reset
                     )
                     print(msg)
