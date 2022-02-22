@@ -37,6 +37,22 @@ def format_float(x, precision=6, min=1):
     return max(x_clean, x_min, key=len)
 
 
+def apply_parent_inverse(obj):
+    # print("apply_parent_inverse", obj)
+    if obj.parent:
+        # based on
+        # https://blender.stackexchange.com/a/28897/16634
+        obj_matrix_orig = obj.matrix_world.copy()
+
+        # Reset parent inverse matrix.
+        # (relationship created when parenting)
+        obj.matrix_parent_inverse.identity()
+
+        # Re-apply the difference between parent/child
+        # (this writes directly into the loc/scale/rot) via a matrix.
+        obj.matrix_basis = obj.parent.matrix_world.inverted() @ obj_matrix_orig
+
+
 ##########################################
 # class
 
@@ -761,6 +777,8 @@ ${entity}
         actualrotation = "0 0 0"
         actualscale = "1 1 1"
         if hasattr(obj, "location"):
+            apply_parent_inverse(obj)
+
             # bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
             # bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
             location = obj.location.copy()
@@ -769,13 +787,13 @@ ${entity}
                 z=self.format_float(location.z),
                 y=self.format_float(-location.y),
             )
-        if hasattr(obj, "scale"):
+
             actualscale = "{x} {z} {y}".format(
                 x=self.format_float(self.scalefactor * obj.scale.x),
                 z=self.format_float(self.scalefactor * obj.scale.z),
                 y=self.format_float(self.scalefactor * obj.scale.y),
             )
-        if hasattr(obj, "rotation_mode"):
+
             # first reset rotation_mode to QUATERNION (otherwise it can have buggy side-effects)
             obj.rotation_mode = "QUATERNION"
             # force rotation_mode to YXZ to be compatible with our export
@@ -1004,7 +1022,6 @@ ${entity}
             lines.append(self.line_indent + "MESH  gltf_name:'{}'".format(gltf_name))
         elif obj.type == "ARMATURE":
             lines.append(self.line_indent + "ARMATURE")
-            # self.export_object(obj=obj, entity_attributes=entity_attributes)
             if obj.children:
                 lines.append(self.line_indent + "process ARMATURE childs..")
                 self.line_indent_level_in()

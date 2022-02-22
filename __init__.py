@@ -119,24 +119,6 @@ class Server(threading.Thread):
 
 
 ##########################################
-# helper
-
-
-def apply_parent_inverse(obj):
-    # based on
-    # https://blender.stackexchange.com/a/28897/16634
-    obj_matrix_orig = obj.matrix_world.copy()
-
-    # Reset parent inverse matrix.
-    # (relationship created when parenting)
-    obj.matrix_parent_inverse.identity()
-
-    # Re-apply the difference between parent/child
-    # (this writes directly into the loc/scale/rot) via a matrix.
-    obj.matrix_basis = obj.parent.matrix_world.inverted() @ obj_matrix_orig
-
-
-##########################################
 # UI
 
 
@@ -237,7 +219,6 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             row = layout.row(align=True)
             box = row.box()
             box.label(text="Add interactive or action to selected", icon="NONE")
-            box.operator("aframe.apply_parent_inverse")
             box.operator("aframe.cubemap")
             box.operator("aframe.rotation360")
             box.operator("aframe.images")
@@ -406,22 +387,6 @@ class AframePrepare_OT_Operator(bpy.types.Operator):
             view_layer.objects.active = obj
             bpy.context.object.TLM_ObjectProperties.tlm_mesh_lightmap_use = True
             bpy.context.object.TLM_ObjectProperties.tlm_mesh_lightmap_resolution = "256"
-
-        return {"FINISHED"}
-
-
-class AframeApplyParentInverse_OT_Operator(bpy.types.Operator):
-    bl_idname = "aframe.apply_parent_inverse"
-    bl_label = "apply parent inverse matrix"
-    bl_description = (
-        "apply all parent inverse matrix things to the selected objecst\n"
-        "so that the object itself has only the needed relative transforms."
-    )
-
-    def execute(self, content):
-        selection = bpy.context.selected_objects
-        for obj in selection:
-            apply_parent_inverse(obj)
 
         return {"FINISHED"}
 
