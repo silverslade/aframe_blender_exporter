@@ -12,6 +12,9 @@ import json
 import os
 import bpy
 
+# import mathutils
+from mathutils import Vector
+
 # import pprint
 
 from .. import blender_helper as b_helper
@@ -81,6 +84,7 @@ class ExportAframe(object):
         self.line_indent_spacer = "    "
         self.line_indent_level = 0
 
+        self.transform_stack = {}
         # self.float_precision_max = 6
         # self.float_precision_min = 1
         # if hasattr(scene, "b_float_precision_max"):
@@ -635,6 +639,43 @@ ${entity}
 
         return entity_str
 
+    def transform_backup_and_clear(self, obj):
+        # backup
+        self.transform_stack[obj.name] = {
+            "location": obj.location.copy(),
+            # "rotation": obj.rotation_quaternion.copy(),
+            "rotation": obj.rotation_euler.copy(),
+            # "scale": obj.scale.copy(),
+        }
+        # print("  obj.location", obj.location)
+        # print("  obj.rotation_quaternion", obj.rotation_quaternion)
+        # clear
+        obj.location.zero()
+        # obj.rotation_quaternion.zero()
+        obj.rotation_euler.zero()
+        # obj.scale.x = 1.0
+        # obj.scale.y = 1.0
+        # obj.scale.z = 1.0
+
+    def transform_backup_and_clear_recursive(self, obj):
+        print(self.line_indent, "tbac recusive", obj)
+        self.transform_backup_and_clear(obj)
+        if obj.parent:
+            print(self.line_indent, "tbac parents", obj.parent)
+            self.transform_backup_and_clear_recursive(obj.parent)
+
+    def transform_restore(self, obj):
+        transform = self.transform_stack.pop(obj.name)
+        obj.location = transform["location"]
+        # obj.rotation_quaternion = transform["rotation"]
+        obj.rotation_euler = transform["rotation"]
+        # obj.scale = transform["scale"]
+
+    def transform_restore_recursive(self, obj):
+        self.transform_restore(obj)
+        if obj.parent:
+            self.transform_restore_recursive(obj.parent)
+
     def get_or_export_obj(self, obj, mesh_name=None):
         filename = None
         gltf_name = obj.name
@@ -650,14 +691,10 @@ ${entity}
                 self.base_path, constants.PATH_ASSETS, gltf_name
             )  # + '.glft' )
             print("{}* filename {}.gltf".format(self.line_indent, filename))
-            location = obj.location.copy()
-            rotation_euler = obj.rotation_euler.copy()
-            # print("  obj.location", obj.location)
-            # print("  obj.rotation_euler", obj.rotation_euler)
-            bpy.ops.object.location_clear()
-            bpy.ops.object.rotation_clear()
-            # print("  obj.location", obj.location)
-            # print("  obj.rotation_euler", obj.rotation_euler)
+
+            # clear location and position so the model is exported at the world-origin.
+            # handle obj and parent objects recusive
+            self.transform_backup_and_clear_recursive(obj)
 
             print(b_helper.colors.fg.lightblue)
             bpy.ops.export_scene.gltf(
@@ -674,12 +711,8 @@ ${entity}
             )
             print(b_helper.colors.reset, end="")
 
-            obj.location = location
-            obj.rotation_euler = rotation_euler
-            # print("  location", location)
-            # print("  rotation_euler", rotation_euler)
-            # print("  obj.location", obj.location)
-            # print("  obj.rotation_euler", obj.rotation_euler)
+            # restore all transforms...
+            self.transform_restore_recursive(obj)
 
             self.exported_gltf_objects.append(gltf_name)
 
@@ -970,19 +1003,18 @@ ${entity}
                 # print(self.line_indent + "entity_attributes:", entity_attributes)
             lines.append(self.line_indent + "MESH  gltf_name:'{}'".format(gltf_name))
         elif obj.type == "ARMATURE":
-            lines.append(self.line_indent + "ARMATURE".format(obj.name))
-            if not self.print_only:
-                # self.export_object(obj=obj, entity_attributes=entity_attributes)
-                if obj.children:
-                    lines.append(self.line_indent + "process ARMATURE childs..")
-                    self.line_indent_level_in()
-                    entity_content_temp, lines_temp = self.traverse_objects(
-                        obj.children,
-                        allow_childs=True,
-                    )
-                    lines.extend(lines_temp)
-                    entity_content += entity_content_temp
-                    self.line_indent_level_out()
+            lines.append(self.line_indent + "ARMATURE")
+            # self.export_object(obj=obj, entity_attributes=entity_attributes)
+            if obj.children:
+                lines.append(self.line_indent + "process ARMATURE childs..")
+                self.line_indent_level_in()
+                entity_content_temp, lines_temp = self.traverse_objects(
+                    obj.children,
+                    allow_childs=True,
+                )
+                lines.extend(lines_temp)
+                entity_content += entity_content_temp
+                self.line_indent_level_out()
 
                 # HERE GEHTS WEITER!!!!
 
@@ -1138,13 +1170,18 @@ ${entity}
                 print(msg)
         return entity_str, lines
 
-    def traverse_collection_and_object_tree(self, print_only=False):
-        # new approach: traverse collection tree
-        self.print_only = print_only
+    def traverse_prepare_things(self):
+        # clean up / reset everything..
         self.line_indent_reset()
+        self.transform_stack = {}
         self.entities_created = 0
         self.videocount = 0
         self.imagecount = 0
+
+    def traverse_collection_and_object_tree(self, print_only=False):
+        # new approach: traverse collection tree
+        self.print_only = print_only
+        self.traverse_prepare_things()
         self.collection_hidden_dict_update()
         print("")
         print("#" * 42)
