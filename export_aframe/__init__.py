@@ -4,6 +4,7 @@
 """Export scene as a-frame website."""
 
 # import sys
+# import time
 import re
 import shutil
 import math
@@ -13,7 +14,7 @@ import os
 import bpy
 
 # import mathutils
-from mathutils import Vector
+# from mathutils import Vector
 
 # import pprint
 
@@ -101,6 +102,7 @@ class ExportAframe(object):
         self.line_indent_level = 0
 
         self.transform_stack = {}
+        self.obj_hide_selection_stack = {}
         # self.float_precision_max = 6
         # self.float_precision_min = 1
         # if hasattr(scene, "b_float_precision_max"):
@@ -621,6 +623,91 @@ ${entity}
         self.line_indent_level_out()
 
     ##########################################
+    # ... helper
+
+    # transform...
+    def transform_backup_and_clear(self, obj):
+        # backup
+        self.transform_stack[obj.name] = {
+            "location": obj.location.copy(),
+            # "rotation": obj.rotation_quaternion.copy(),
+            "rotation": obj.rotation_euler.copy(),
+            # "scale": obj.scale.copy(),
+        }
+        # print("  obj.location", obj.location)
+        # print("  obj.rotation_quaternion", obj.rotation_quaternion)
+        # clear
+        obj.location.zero()
+        # obj.rotation_quaternion.zero()
+        obj.rotation_euler.zero()
+        # obj.scale.x = 1.0
+        # obj.scale.y = 1.0
+        # obj.scale.z = 1.0
+
+    def transform_backup_and_clear_recursive(self, obj):
+        # print(self.line_indent, "tbac recusive", obj)
+        self.transform_backup_and_clear(obj)
+        if obj.parent:
+            # print(self.line_indent, "tbac parents", obj.parent)
+            self.transform_backup_and_clear_recursive(obj.parent)
+
+    def transform_restore(self, obj):
+        transform = self.transform_stack.pop(obj.name)
+        obj.location = transform["location"]
+        # obj.rotation_quaternion = transform["rotation"]
+        obj.rotation_euler = transform["rotation"]
+        # obj.scale = transform["scale"]
+
+    def transform_restore_recursive(self, obj):
+        self.transform_restore(obj)
+        if obj.parent:
+            self.transform_restore_recursive(obj.parent)
+
+    # selection...
+    def select_object(self, obj):
+        self.obj_hide_selection_stack[obj.name] = obj.hide_select
+        obj.hide_select = False
+        obj.select_set(state=True)
+
+    def deselect_object_restore(self, obj):
+        obj.select_set(state=False)
+        obj.hide_select = self.obj_hide_selection_stack.pop(obj.name)
+
+    def select_objects_recusive(self, obj):
+        self.select_object(obj)
+        if obj.children:
+            for child in obj.children:
+                self.select_objects_recusive(child)
+
+    def deselect_objects_recusive(self, obj):
+        self.deselect_object_restore(obj)
+        if obj.children:
+            for child in obj.children:
+                self.deselect_objects_recusive(child)
+
+    # visibility / hidden state...
+    def collection_hidden_dict_traverse(self, view_layers):
+        for vl in view_layers:
+            self.collection_hidden_dict[vl.name] = vl.hide_viewport
+            self.collection_hidden_dict_traverse(vl.children)
+
+    def collection_hidden_dict_update(self):
+        self.collection_hidden_dict = {}
+        self.collection_hidden_dict_traverse(
+            bpy.context.view_layer.layer_collection.children
+        )
+
+    def get_object_visible(self, obj):
+        hidden = False
+        hidden = hidden or obj.hide_viewport
+        hidden = hidden or obj.hide_render
+        if isinstance(obj, bpy.types.Collection):
+            if obj.name in self.collection_hidden_dict:
+                hidden = hidden or self.collection_hidden_dict[obj.name]
+        elif isinstance(obj, bpy.types.Object):
+            hidden = hidden or obj.hide_get()
+        return not hidden
+
     # ...
     def prepare_entity_str(self, entity_attributes):
         # print("prepare_entity_str")
@@ -655,42 +742,21 @@ ${entity}
 
         return entity_str
 
-    def transform_backup_and_clear(self, obj):
-        # backup
-        self.transform_stack[obj.name] = {
-            "location": obj.location.copy(),
-            # "rotation": obj.rotation_quaternion.copy(),
-            "rotation": obj.rotation_euler.copy(),
-            # "scale": obj.scale.copy(),
-        }
-        # print("  obj.location", obj.location)
-        # print("  obj.rotation_quaternion", obj.rotation_quaternion)
-        # clear
-        obj.location.zero()
-        # obj.rotation_quaternion.zero()
-        obj.rotation_euler.zero()
-        # obj.scale.x = 1.0
-        # obj.scale.y = 1.0
-        # obj.scale.z = 1.0
-
-    def transform_backup_and_clear_recursive(self, obj):
-        print(self.line_indent, "tbac recusive", obj)
-        self.transform_backup_and_clear(obj)
-        if obj.parent:
-            print(self.line_indent, "tbac parents", obj.parent)
-            self.transform_backup_and_clear_recursive(obj.parent)
-
-    def transform_restore(self, obj):
-        transform = self.transform_stack.pop(obj.name)
-        obj.location = transform["location"]
-        # obj.rotation_quaternion = transform["rotation"]
-        obj.rotation_euler = transform["rotation"]
-        # obj.scale = transform["scale"]
-
-    def transform_restore_recursive(self, obj):
-        self.transform_restore(obj)
-        if obj.parent:
-            self.transform_restore_recursive(obj.parent)
+    def export_selection_as_gltf(self, filename):
+        print(b_helper.colors.fg.lightblue)
+        bpy.ops.export_scene.gltf(
+            filepath=filename,
+            export_format="GLTF_EMBEDDED",
+            use_selection=True,
+            export_animations=True,
+            export_nla_strips=True,
+            export_force_sampling=True,
+            export_frame_range=False,
+            # export_apply=True,
+            export_apply=self.scene.export_apply_modifiers,
+            # export_lights=True
+        )
+        print(b_helper.colors.reset, end="")
 
     def get_or_export_obj(self, obj, mesh_name=None):
         filename = None
@@ -712,20 +778,7 @@ ${entity}
             # handle obj and parent objects recusive
             self.transform_backup_and_clear_recursive(obj)
 
-            print(b_helper.colors.fg.lightblue)
-            bpy.ops.export_scene.gltf(
-                filepath=filename,
-                export_format="GLTF_EMBEDDED",
-                use_selection=True,
-                export_animations=True,
-                export_nla_strips=True,
-                export_force_sampling=True,
-                export_frame_range=False,
-                # export_apply=True,
-                export_apply=self.scene.export_apply_modifiers,
-                # export_lights=True
-            )
-            print(b_helper.colors.reset, end="")
+            self.export_selection_as_gltf(filename)
 
             # restore all transforms...
             self.transform_restore_recursive(obj)
@@ -749,28 +802,6 @@ ${entity}
             #     "".format(obj_name=obj.name)
             # )
         return gltf_name
-
-    def collection_hidden_dict_traverse(self, view_layers):
-        for vl in view_layers:
-            self.collection_hidden_dict[vl.name] = vl.hide_viewport
-            self.collection_hidden_dict_traverse(vl.children)
-
-    def collection_hidden_dict_update(self):
-        self.collection_hidden_dict = {}
-        self.collection_hidden_dict_traverse(
-            bpy.context.view_layer.layer_collection.children
-        )
-
-    def get_object_visible(self, obj):
-        hidden = False
-        hidden = hidden or obj.hide_viewport
-        hidden = hidden or obj.hide_render
-        if isinstance(obj, bpy.types.Collection):
-            if obj.name in self.collection_hidden_dict:
-                hidden = hidden or self.collection_hidden_dict[obj.name]
-        elif isinstance(obj, bpy.types.Object):
-            hidden = hidden or obj.hide_get()
-        return not hidden
 
     def get_object_coordinates(self, obj):
         actualposition = "0 0 0"
@@ -1004,6 +1035,7 @@ ${entity}
 
         bpy.ops.object.select_all(action="DESELECT")
         obj.select_set(state=True)
+        # main selection
         bpy.context.view_layer.objects.active = obj
 
         # prepare
@@ -1022,21 +1054,46 @@ ${entity}
             lines.append(self.line_indent + "MESH  gltf_name:'{}'".format(gltf_name))
         elif obj.type == "ARMATURE":
             lines.append(self.line_indent + "ARMATURE")
+            # gltf_name = self.export_object(
+            #     obj=obj,
+            #     entity_attributes=entity_attributes,
+            #     mesh_name=obj.name,
+            # )
+            # if obj.animation_data:
+            #     gltf_name = self.export_object(
+            #         obj=obj,
+            #         entity_attributes=entity_attributes,
+            #         mesh_name=obj.name,
+            #     )
             if obj.children:
                 lines.append(self.line_indent + "process ARMATURE childs..")
+                print(self.line_indent + " PING")
                 self.line_indent_level_in()
-                entity_content_temp, lines_temp = self.traverse_objects(
-                    obj.children,
-                    allow_childs=True,
+                self.select_objects_recusive(obj)
+                gltf_name = self.export_object(
+                    obj=obj,
+                    entity_attributes=entity_attributes,
+                    mesh_name=obj.name,
                 )
-                lines.extend(lines_temp)
-                entity_content += entity_content_temp
+                self.deselect_objects_recusive(obj)
+                # entity_content_temp, lines_temp = self.traverse_objects(
+                #     obj.children,
+                #     allow_childs=True,
+                # )
+                # lines.extend(lines_temp)
+                # entity_content += entity_content_temp
                 self.line_indent_level_out()
 
-                # HERE GEHTS WEITER!!!!
+            # HERE GEHTS WEITER!!!!
 
         elif obj.type == "EMPTY":
             lines.append(self.line_indent + "empty '{}'".format(obj.name))
+            if obj.animation_data:
+                gltf_name = self.export_object(
+                    obj=obj,
+                    entity_attributes=entity_attributes,
+                    mesh_name=obj.name,
+                )
             # check for children
             if obj.children:
                 self.line_indent_level_in()
@@ -1121,7 +1178,7 @@ ${entity}
                 msg += "ignored: not visible"
                 print(msg)
                 lines.append(msg)
-        bpy.ops.object.select_all(action="DESELECT")
+        # bpy.ops.object.select_all(action="DESELECT")
         return entity_content, lines
 
     def traverse_collection(self, collection):
