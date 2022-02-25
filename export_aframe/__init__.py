@@ -22,36 +22,12 @@ from .. import blender_helper as b_helper
 
 from .. import constants
 
+from . import helper
+from . import templates
+from . import magic_comments
+
 # from . import guidata
 # from .material import MaterialManager
-
-
-# helper
-def format_float(x, precision=6, min=1):
-    # inspired by
-    # https://stackoverflow.com/a/65721367/574981
-    # https://stackoverflow.com/questions/2440692/formatting-floats-without-trailing-zeros
-    template_clean = "{{:.{}f}}".format(precision)
-    x_clean = template_clean.format(x).rstrip("0").rstrip(".")
-    template_min = "{{:.{}f}}".format(min)
-    x_min = template_min.format(x)
-    return max(x_clean, x_min, key=len)
-
-
-def apply_parent_inverse(obj):
-    # print("apply_parent_inverse", obj)
-    if obj.parent:
-        # based on
-        # https://blender.stackexchange.com/a/28897/16634
-        obj_matrix_orig = obj.matrix_world.copy()
-
-        # Reset parent inverse matrix.
-        # (relationship created when parenting)
-        obj.matrix_parent_inverse.identity()
-
-        # Re-apply the difference between parent/child
-        # (this writes directly into the loc/scale/rot) via a matrix.
-        obj.matrix_basis = obj.parent.matrix_world.inverted() @ obj_matrix_orig
 
 
 ##########################################
@@ -77,6 +53,7 @@ class ExportAframe(object):
         # print("config", self.config)
 
         # skiphidden=self.option_skiphidden
+        self.debug = False
 
         self.report_obj = report
         self.scene = scene
@@ -101,8 +78,7 @@ class ExportAframe(object):
         self.line_indent_spacer = "    "
         self.line_indent_level = 0
 
-        self.transform_stack = {}
-        self.obj_hide_selection_stack = {}
+        self.helper = helper.HelperTools()
         # self.float_precision_max = 6
         # self.float_precision_min = 1
         # if hasattr(scene, "b_float_precision_max"):
@@ -134,308 +110,6 @@ class ExportAframe(object):
             pre_line=pre_line,
             report=self.report_obj,
         )
-
-    ##########################################
-    # templates
-    def create_default_template(self):
-        """Index html a-frame template."""
-        if not bpy.data.texts.get("index.html"):
-            tpl = bpy.data.texts.new("index.html")
-
-            tpl.from_string(
-                """<!doctype html>
-<html lang="en">
-<!--
-    Generated automatically by AFRAME Exporter for Blender -
-    https://silverslade.itch.io/a-frame-blender-exporter
--->
-<head>
-    <title>WebXR Application</title>
-    <link rel="icon" type="image/png" href="favicon.ico"/>
-    <meta name="description" content="3D Application">
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <script src="https://aframe.io/releases/${aframe_version}/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v6.1.1/dist/aframe-extras.min.js"></script> # noqa
-    <script type="text/javascript" src="js/webxr.js"></script>
-    <script type="text/javascript" src="js/joystick.js"></script>
-    <script type="text/javascript" src="js/camera-cube-env.js"></script>
-
-    <link rel="stylesheet" type="text/css" href="style.css">
-</head>
-<body onload="init();">
-<a-scene
-    ${stats}
-    ${joystick}
-    ${render_shadows}
-    ${renderer}
->
-
-
-    <!-- Assets -->
-    <a-assets>
-${asset}
-    </a-assets>
-
-
-
-
-    <!-- Entities -->
-${entity}
-
-
-
-
-    <!-- Camera -->
-    <a-entity id="player"
-        position="0 -0.2 0"
-        movement-controls="speed: ${player_speed};">
-        <a-entity id="camera"
-            camera="near: 0.001"
-            position="0 ${player_height} 0"
-            look-controls="pointerLockEnabled: true">
-                <a-entity id="cursor"
-                    cursor="fuse: false;"
-                    animation__click="
-                        property: scale;
-                        startEvents: click;
-                        easing: easeInCubic;
-                        dur: 50;
-                        from: 	0.1 0.1 0.1;
-                        to: 1 1 1
-                    "
-                    position="0 0 -0.1"
-                    geometry="primitive: circle; radius: 0.001;"
-                    material="color: #CCC; shader: flat;"
-                    ${show_raycast}>
-                </a-entity>
-        </a-entity>
-            ${vr_controllers}
-    </a-entity>
-
-    <!-- Lights -->
-    <a-entity
-        light="
-            intensity: ${directional_intensity};
-            castShadow: ${cast_shadows};
-            shadowBias: -0.001;
-            shadowCameraFar: 501.02;
-            shadowCameraBottom: 12;
-            shadowCameraFov: 101.79;
-            shadowCameraNear: 0;
-            shadowCameraTop: -5;
-            shadowCameraRight: 10;
-            shadowCameraLeft: -10;
-            shadowRadius: 2
-        "
-        position="1.4 7.2 1"
-    ></a-entity>
-    <a-entity
-        light="
-            type: ambient;
-            intensity: ${ambient_intensity}
-        "
-    ></a-entity>
-
-</a-scene>
-</body>
-</html>
-<!-- Generated automatically by AFRAME Exporter for Blender - https://silverslade.itch.io/a-frame-blender-exporter -->
-    """
-            )
-
-    def create_default_extra_template(self, filename="ascene.php"):
-        """extra output php a-frame template."""
-        if not bpy.data.texts.get(filename):
-            tpl = bpy.data.texts.new(filename)
-
-            tpl.from_string(
-                """<!-- Generated automatically by AFRAME Exporter for Blender -->
-<!-- https://github.com/s-light/aframe_blender_exporter -->
-<a-scene
-    initScene
-    ${stats}
-    ${joystick}
-    ${render_shadows}
-    ${renderer}
->
-    <!-- Assets -->
-    <!-- MAGIC-COMMENT src_prepend="<?php echo get_stylesheet_directory_uri(); ?>/" -->
-    <a-assets>
-        ${asset}
-    </a-assets>
-
-    <!-- Entities -->
-    ${entity}
-
-
-
-
-
-    <!-- Camera -->
-    <!-- https://github.com/supermedium/superframe/tree/master/components/orbit-controls -->
-    <a-entity id="camera"
-        camera="
-            fov:  60;
-            far:  520;
-        "
-        look-controls="enabled:false"
-        orbit-controls="
-            target: 0 ${player_height} 0;
-            initialPosition: 0 ${player_height} 1.2;
-            minPolarAngle: 40;
-            maxPolarAngle: 120;
-            rotateSpeed: ${player_speed};
-            enableZoom: false;
-            zoomSpeed: 1;
-            minDistance: 0;
-            maxDistance: 2.8;
-            minZoom: 0;
-            enablePan: false;
-            autoRotate: true;
-            autoRotateSpeed: 0.005;
-        "
-    >
-        <a-entity
-            id="cursor"
-            cursor="
-                fuse: false;
-                rayOrigin: mouse;
-            "
-            position="0 0 -0.5"
-            geometry="primitive: circle; radius: 0.0005;"
-            material="color: #CCC; shader: flat;"
-            raycaster="
-                far: 10.0;
-                interval: 300.0;
-                objects: .clickable,.links;
-            "
-        >
-        <!--
-        showLine: true;
-        lineColor: red;
-        lineOpacity: 0.5
-        ${show_raycast}
-        -->
-        </a-entity>
-    </a-entity>
-    <!--
-    look-controls="pointerLockEnabled: true"
-    -->
-
-    <!-- <a-entity id="player"
-        position="0 -0.2 0"
-        movement-controls="speed: ${player_speed};">
-        ${vr_controllers}
-    </a-entity> -->
-
-
-
-
-
-
-    <!-- Lights -->
-    <a-entity
-        id="light_ambient"
-        light="
-            type: ambient;
-            intensity: ${ambient_intensity}
-        "
-    ></a-entity>
-    <a-entity
-        id="light_sun"
-        light="
-            type: directional;
-            intensity: 2;
-            castShadow: true;
-            shadowBias: -0.0004;
-
-            shadowMapHeight: 2048;
-            shadowMapWidth: 2048;
-
-            shadowCameraNear: 0;
-            shadowCameraFar: 50;
-            shadowCameraFov: 102;
-
-            shadowCameraBottom: 12;
-            shadowCameraTop: -5;
-            shadowCameraRight: 10;
-            shadowCameraLeft: -10;
-
-            shadowRadius: 2
-        "
-        position="4 10 10"
-    ></a-entity>
-    <a-entity
-        id="light_room_ceiling"
-        light="
-            type: point;
-            intensity: 3;
-            castShadow: true;
-
-            shadowBias: -0.001;
-
-            shadowMapHeight: 512;
-            shadowMapWidth: 512;
-
-            shadowCameraNear: 0;
-            shadowCameraFar: 50;
-            shadowCameraFov: 102;
-
-            shadowCameraBottom: 12;
-            shadowCameraTop: -5;
-            shadowCameraRight: 10;
-            shadowCameraLeft: -10;
-
-            shadowRadius: 2
-        "
-        position="0 2.5 0"
-    ></a-entity>
-    <a-entity
-        id="light_room_lamp"
-        light="
-            type: point;
-            intensity: 1;
-            castShadow: true;
-
-            shadowBias: -0.001;
-
-            shadowMapHeight: 512;
-            shadowMapWidth: 512;
-
-            shadowCameraNear: 0;
-            shadowCameraFar: 50;
-            shadowCameraFov: 102;
-
-            shadowCameraBottom: 12;
-            shadowCameraTop: -5;
-            shadowCameraRight: 10;
-            shadowCameraLeft: -10;
-
-            shadowRadius: 2
-        "
-        position="2.0 0.8 -2.1"
-    ></a-entity>
-
-
-    <!-- THE END -->
-    <noscript>
-        <style media="screen">
-            a-scene {
-                display: block;
-                position: absolute;
-                height: 0%;
-                width: 0%;
-                top: 0;
-            }
-        </style>
-    </noscript>
-</a-scene>
-    """
-            )
-
-        return filename
 
     ##########################################
     # output preparations
@@ -609,7 +283,7 @@ ${entity}
     ##########################################
     # helper
     def format_float(self, x):
-        return format_float(
+        return helper.format_float(
             x,
             precision=self.scene.b_float_precision_max,
             min=self.scene.b_float_precision_min,
@@ -631,91 +305,6 @@ ${entity}
         self.line_indent_level_out()
 
     ##########################################
-    # ... helper
-
-    # transform...
-    def transform_backup_and_clear(self, obj):
-        # backup
-        self.transform_stack[obj.name] = {
-            "location": obj.location.copy(),
-            # "rotation": obj.rotation_quaternion.copy(),
-            "rotation": obj.rotation_euler.copy(),
-            # "scale": obj.scale.copy(),
-        }
-        # print("  obj.location", obj.location)
-        # print("  obj.rotation_quaternion", obj.rotation_quaternion)
-        # clear
-        obj.location.zero()
-        # obj.rotation_quaternion.zero()
-        obj.rotation_euler.zero()
-        # obj.scale.x = 1.0
-        # obj.scale.y = 1.0
-        # obj.scale.z = 1.0
-
-    def transform_backup_and_clear_recursive(self, obj):
-        # print(self.line_indent, "tbac recusive", obj)
-        self.transform_backup_and_clear(obj)
-        if obj.parent:
-            # print(self.line_indent, "tbac parents", obj.parent)
-            self.transform_backup_and_clear_recursive(obj.parent)
-
-    def transform_restore(self, obj):
-        transform = self.transform_stack.pop(obj.name)
-        obj.location = transform["location"]
-        # obj.rotation_quaternion = transform["rotation"]
-        obj.rotation_euler = transform["rotation"]
-        # obj.scale = transform["scale"]
-
-    def transform_restore_recursive(self, obj):
-        self.transform_restore(obj)
-        if obj.parent:
-            self.transform_restore_recursive(obj.parent)
-
-    # selection...
-    def select_object(self, obj):
-        self.obj_hide_selection_stack[obj.name] = obj.hide_select
-        obj.hide_select = False
-        obj.select_set(state=True)
-
-    def deselect_object_restore(self, obj):
-        obj.select_set(state=False)
-        obj.hide_select = self.obj_hide_selection_stack.pop(obj.name)
-
-    def select_objects_recusive(self, obj):
-        self.select_object(obj)
-        if obj.children:
-            for child in obj.children:
-                self.select_objects_recusive(child)
-
-    def deselect_objects_recusive(self, obj):
-        self.deselect_object_restore(obj)
-        if obj.children:
-            for child in obj.children:
-                self.deselect_objects_recusive(child)
-
-    # visibility / hidden state...
-    def collection_hidden_dict_traverse(self, view_layers):
-        for vl in view_layers:
-            self.collection_hidden_dict[vl.name] = vl.hide_viewport
-            self.collection_hidden_dict_traverse(vl.children)
-
-    def collection_hidden_dict_update(self):
-        self.collection_hidden_dict = {}
-        self.collection_hidden_dict_traverse(
-            bpy.context.view_layer.layer_collection.children
-        )
-
-    def get_object_visible(self, obj):
-        hidden = False
-        hidden = hidden or obj.hide_viewport
-        hidden = hidden or obj.hide_render
-        if isinstance(obj, bpy.types.Collection):
-            if obj.name in self.collection_hidden_dict:
-                hidden = hidden or self.collection_hidden_dict[obj.name]
-        elif isinstance(obj, bpy.types.Object):
-            hidden = hidden or obj.hide_get()
-        return not hidden
-
     # ...
     def prepare_entity_str(self, entity_attributes):
         # print("prepare_entity_str")
@@ -784,12 +373,12 @@ ${entity}
 
             # clear location and position so the model is exported at the world-origin.
             # handle obj and parent objects recusive
-            self.transform_backup_and_clear_recursive(obj)
+            self.helper.transform_backup_and_clear_recursive(obj)
 
             self.export_selection_as_gltf(filename)
 
             # restore all transforms...
-            self.transform_restore_recursive(obj)
+            self.helper.transform_restore_recursive(obj)
 
             self.exported_gltf_objects.append(gltf_name)
 
@@ -818,7 +407,7 @@ ${entity}
             "scale": "1 1 1",
         }
         if hasattr(obj, "location"):
-            apply_parent_inverse(obj)
+            helper.apply_parent_inverse(obj)
 
             # bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
             # bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
@@ -1038,13 +627,13 @@ ${entity}
             lines.append(self.line_indent + "process ARMATURE childs..")
             # print(self.line_indent + " PING")
             self.line_indent_level_in()
-            self.select_objects_recusive(obj)
+            self.helper.select_objects_recusive(obj)
             gltf_name = self.export_object(
                 obj=obj,
                 entity_attributes=entity_attributes,
                 mesh_name=obj.name,
             )
-            self.deselect_objects_recusive(obj)
+            self.helper.deselect_objects_recusive(obj)
             lines.append(self.line_indent + "gltf: '{}'".format(gltf_name))
             # entity_content_temp, lines_temp = self.traverse_objects(
             #     obj.children,
@@ -1190,7 +779,7 @@ ${entity}
         lines = []
         for obj in objects:
             msg = self.line_indent + "object '{}' ({}) ".format(obj.name, obj.type)
-            if self.get_object_visible(obj):
+            if self.helper.get_object_visible(obj):
                 if obj.type not in exclusion_obj_types:
                     # ignore non direct childs
                     if not (obj.parent and not allow_childs):
@@ -1206,9 +795,10 @@ ${entity}
 
                         self.entities_created += 1
                     else:
-                        msg += "ignored: has parent."
-                        print(msg)
-                        lines.append(msg)
+                        if self.debug:
+                            msg += "ignored: has parent."
+                            print(msg)
+                            lines.append(msg)
                 else:
                     msg = (
                         b_helper.colors.fg.yellow
@@ -1278,7 +868,7 @@ ${entity}
         entity_str = ""
         for collection in collections:
             msg = self.line_indent + "collection '{}' ".format(collection.name)
-            if self.get_object_visible(collection):
+            if self.helper.get_object_visible(collection):
                 lines.append(msg)
                 print(msg)
                 entity_str_temp, lines_temp = self.traverse_collection(collection)
@@ -1302,7 +892,7 @@ ${entity}
         # new approach: traverse collection tree
         self.print_only = print_only
         self.traverse_prepare_things()
-        self.collection_hidden_dict_update()
+        self.helper.collection_hidden_dict_update()
         print("")
         print("#" * 42)
         print("")
@@ -1320,104 +910,6 @@ ${entity}
         print("")
         print("#" * 42)
         print("")
-
-    ##########################################
-    # magic comments
-    def magic_comments_find_and_parse(self, input_text):
-        print("magic_comments_find_and_parse...")
-        magic_comments_list = []
-        # <!-- MAGIC-COMMENT src_prepend="<?php echo get_stylesheet_directory_uri(); ?>/" -->
-        # <!-- MAGIC-COMMENT replace_search="src=\"./" replace_with="src=\"~assets/" -->
-        # <!-- MAGIC-COMMENT test="src=\"<?php echo x ?>" -->
-        regex_find_magic_comment = re.compile(r"<!--\s*MAGIC-COMMENT\s*?(.*?)\s*?-->")
-        magic_comments = regex_find_magic_comment.findall(input_text)
-        # print("magic_comments", magic_comments)
-        for magic_comment in magic_comments:
-            magic_comment = magic_comment.strip()
-            # magic_comment = magic_comment.decode()
-            # print(
-            #     'magic_comment "{}" → r"""{}""" '.format(
-            #         magic_comment, repr(magic_comment)
-            #     )
-            # )
-            # print("magic_comment {}".format(repr(magic_comment)))
-            magic_comment_dict = {
-                "raw_content": magic_comment,
-                "attributes": {},
-            }
-            # example:
-            # >>> magic_comment = r"""replace_search="src=\"./" replace_with="src=\\"~assets/" """
-            # >>> magic_comment
-            # 'replace_search="src=\\"./" replace_with="src=\\\\"~assets/" '
-            # >>> magic_comment = r"""test="src=\"<?php echo x ?>" """
-            # regex_split_attributes = re.compile(r"""\s*?(\S+)="([\S<>\?]+)"\s*?""")
-            # regex_split_attributes = re.compile(r"""(\S+)(?<==")(.*)(?=")""")
-            # regex based on https://www.metaltoad.com/blog/regex-quoted-string-escapable-quotes
-            regex_split_attributes = re.compile(
-                r"""(\S+)=((?<![\\])['"])((?:.(?!(?<![\\])\2))*.?)\2"""
-            )
-            mc_attribute_groups = regex_split_attributes.findall(magic_comment)
-            # print("mc_attribute_groups", mc_attribute_groups)
-            for item_name, item_quote, item_value in mc_attribute_groups:
-                # print("* item_name:'{}'  item_value:'{}'".format(item_name, item_value))
-                # decode escape sequences like \" to "
-                item_name = item_name.encode().decode("unicode-escape")
-                # print(" → item_name", item_name)
-                item_value = item_value.encode().decode("unicode-escape")
-                # print(" → item_value", item_value)
-                magic_comment_dict["attributes"][item_name] = item_value
-            magic_comments_list.append(magic_comment_dict)
-        return magic_comments_list
-
-    def magic_comment_handle__src_prepend(self, mc_attributes, input_text):
-        print("magic_comment_handle__src_prepend:")
-        src_prepend = mc_attributes["src_prepend"]
-        print("  src_prepend = ", repr(src_prepend))
-        result_text = input_text.replace('src="', 'src="{}'.format(src_prepend))
-        return result_text
-
-    def magic_comment_handle__replace_search(self, mc_attributes, input_text):
-        print("magic_comment_handle__replace_search:")
-        replace_search = mc_attributes["replace_search"]
-        replace_with = mc_attributes["replace_with"]
-        print("  replace_search = ", repr(replace_search))
-        print("  replace_with = ", repr(replace_with))
-
-        # test text
-        # input_text = """<a-asset-item id="Cube" src="./assets/Cube.gltf" ></a-asset-item>"""
-        result_text = input_text.replace(replace_search, replace_with)
-        print("  → replaced {} occurrences".format(input_text.count(replace_search)))
-        return result_text
-
-    def magic_comment_handle(self, magic_comment, input_text):
-        result_text = input_text
-        mc_attributes = magic_comment["attributes"]
-        # print("mc_attributes = {}".format(repr(mc_attributes)))
-        if len(mc_attributes) > 0:
-            if "src_prepend" in mc_attributes:
-                result_text = self.magic_comment_handle__src_prepend(
-                    mc_attributes, input_text
-                )
-            elif "replace_search" in mc_attributes:
-                result_text = self.magic_comment_handle__replace_search(
-                    mc_attributes, input_text
-                )
-            else:
-                print("attribute names '{}' not implemented.".format(mc_attributes))
-        else:
-            print("empty MAGIC-COMMENT.")
-        return result_text
-
-    def handle_magic_comment(self, input_text):
-        magic_comments_list = self.magic_comments_find_and_parse(input_text)
-        # print("magic_comments_list:")
-        # for mc in magic_comments_list:
-        #     print(" - {}".format(repr(mc["raw_content"])))
-        #     for item in mc["attributes"].items():
-        #         print("   - {}".format(item))
-        for magic_comment in magic_comments_list:
-            input_text = self.magic_comment_handle(magic_comment, input_text)
-        return input_text
 
     ##########################################
 
@@ -1549,7 +1041,7 @@ ${entity}
 
         showrenderer = self.get_renderer()
 
-        self.create_default_template()
+        templates.create_default()
         t = Template(bpy.data.texts["index.html"].as_string())
         s = ""
         try:
@@ -1578,7 +1070,7 @@ ${entity}
             )
         s2 = None
         if self.scene.s_extra_output_file:
-            self.create_default_extra_template(self.scene.s_extra_output_file)
+            templates.create_default_extra(self.scene.s_extra_output_file)
             t2 = Template(bpy.data.texts[self.scene.s_extra_output_file].as_string())
             try:
                 s2 = t2.substitute(
@@ -1605,7 +1097,7 @@ ${entity}
                     ),
                 )
             print("search and handle MAGIC-COMMENT")
-            s2 = self.handle_magic_comment(s2)
+            s2 = magic_comments.run(s2)
         return s, s2
 
     # ##########################################
