@@ -774,6 +774,60 @@ class ExportAframe(object):
         print("")
 
     ##########################################
+    def export_single_model(self):
+        print("[AFRAME EXPORTER] Exporting one single global mesh")
+        if self.scene.b_cast_shadows:
+            single_cast_shadows = "true"
+        else:
+            single_cast_shadows = "false"
+        self.entities.append(
+            "\n\t\t\t"
+            "<a-entity "
+            'id="#MainMesh" '
+            'gltf-model="#MainMesh" '
+            'scale="1 1 1" '
+            'visible="true" '
+            'shadow="cast: {single_cast_shadows}'
+            '"></a-entity>'
+            "".format(single_cast_shadows=single_cast_shadows)
+        )
+        self.assets.append(
+            "\n\t\t\t\t"
+            "<a-asset-item "
+            'id="MainMesh" '
+            'src="./assets/MainMesh.gltf" '
+            "></a-asset-item>"
+        )
+
+        bpy.ops.object.select_all(action="SELECT")
+        filename = os.path.join(constants.DEST_RES, constants.PATH_ASSETS, "MainMesh")
+        bpy.ops.export_scene.gltf(
+            filepath=filename,
+            export_format="GLTF_EMBEDDED",
+            use_selection=True,
+            export_texcoords=True,
+            export_normals=True,
+            export_draco_mesh_compression_enable=False,
+            export_draco_mesh_compression_level=6,
+            export_draco_position_quantization=14,
+            export_draco_normal_quantization=10,
+            export_draco_texcoord_quantization=12,
+            export_draco_generic_quantization=12,
+            export_tangents=True,
+            export_materials="EXPORT",
+            export_colors=True,
+            export_extras=True,
+            export_yup=True,
+            export_apply=True,
+            export_animations=True,
+            export_frame_range=True,
+            export_frame_step=1,
+            export_force_sampling=True,
+            export_displacement=True,
+        )
+        bpy.ops.object.select_all(action="DESELECT")
+
+    ##########################################
 
     def get_shadow(self):
         showcast_shadows = "false"
@@ -829,7 +883,7 @@ class ExportAframe(object):
                     <a-entity
                         light="
                             type: directional;
-                            intensity: ${directional_intensity};;
+                            intensity: ${directional_intensity};
                             castShadow: ${cast_shadows};
                             shadowBias: -0.0004;
 
@@ -1037,10 +1091,13 @@ class ExportAframe(object):
         self.resources.create_diretories()
         self.resources.handle_resources()
 
-        self.traverse_collection_and_object_tree()
+        if self.scene.b_export_single_model:
+            self.export_single_model()
+        else:
+            self.traverse_collection_and_object_tree()
 
-        self.handle_sky()
-        self.handle_default_lights()
+            self.handle_sky()
+            self.handle_default_lights()
 
         print("entities handling finished.")
         print("---")
