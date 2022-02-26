@@ -4,6 +4,7 @@
 """HelperTools."""
 
 import bpy
+import math
 
 ##########################################
 # statics
@@ -34,6 +35,52 @@ def apply_parent_inverse(obj):
         # Re-apply the difference between parent/child
         # (this writes directly into the loc/scale/rot) via a matrix.
         obj.matrix_basis = obj.parent.matrix_world.inverted() @ obj_matrix_orig
+
+
+def get_object_coordinates(obj, *, scalefactor, precision=6, min=1):
+    transforms = {
+        "location": "0 0 0",
+        "rotation": "0 0 0",
+        "scale": "1 1 1",
+    }
+    if hasattr(obj, "location"):
+        apply_parent_inverse(obj)
+
+        # bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
+        # bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
+        location = obj.location.copy()
+        transforms["location"] = "{x} {z} {y}".format(
+            x=format_float(location.x, precision, min),
+            z=format_float(location.z, precision, min),
+            y=format_float(-location.y, precision, min),
+        )
+
+        transforms["scale"] = "{x} {z} {y}".format(
+            x=format_float(scalefactor * obj.scale.x, precision, min),
+            z=format_float(scalefactor * obj.scale.z, precision, min),
+            y=format_float(scalefactor * obj.scale.y, precision, min),
+        )
+        # print(self.line_indent + "* scale calculation:")
+        # print(self.line_indent + "  - scalefactor: {}".format(self.scalefactor))
+        # print(self.line_indent + "  - scale.x: {}".format(obj.scale.x))
+
+        # first reset rotation_mode to QUATERNION (otherwise it can have buggy side-effects)
+        obj.rotation_mode = "QUATERNION"
+        # force rotation_mode to YXZ to be compatible with our export
+        obj.rotation_mode = "YXZ"
+        rotation = obj.rotation_euler.copy()
+        # https://aframe.io/docs/1.2.0/components/rotation.html#sidebar
+        # pi = 22.0/7.0
+        transforms["rotation"] = "{x} {z} {y}".format(
+            x=format_float(math.degrees(rotation.x), precision, min),
+            z=format_float(math.degrees(rotation.z), precision, min),
+            y=format_float(math.degrees(-rotation.y), precision, min),
+        )
+
+    # print(self.line_indent + "* transforms[location]", transforms["location"])
+    # print(self.line_indent + "* transforms[scale]", transforms["scale"])
+    # print(self.line_indent + "* transforms[rotation]", transforms["rotation"])
+    return transforms
 
 
 ##########################################
@@ -136,101 +183,3 @@ class HelperTools(object):
         elif isinstance(obj, bpy.types.Object):
             hidden = hidden or obj.hide_get()
         return not hidden
-
-
-class MagicComments(object):
-    def find_and_parse(self, input_text):
-        print("find_and_parse...")
-        list = []
-        # <!-- MAGIC-COMMENT src_prepend="<?php echo get_stylesheet_directory_uri(); ?>/" -->
-        # <!-- MAGIC-COMMENT replace_search="src=\"./" replace_with="src=\"~assets/" -->
-        # <!-- MAGIC-COMMENT test="src=\"<?php echo x ?>" -->
-        regex_find_magic_comment = re.compile(r"<!--\s*MAGIC-COMMENT\s*?(.*?)\s*?-->")
-        magic_comments = regex_find_magic_comment.findall(input_text)
-        # print("magic_comments", magic_comments)
-        for magic_comment in magic_comments:
-            magic_comment = magic_comment.strip()
-            # magic_comment = magic_comment.decode()
-            # print(
-            #     'magic_comment "{}" → r"""{}""" '.format(
-            #         magic_comment, repr(magic_comment)
-            #     )
-            # )
-            # print("magic_comment {}".format(repr(magic_comment)))
-            magic_comment_dict = {
-                "raw_content": magic_comment,
-                "attributes": {},
-            }
-            # example:
-            # >>> magic_comment = r"""replace_search="src=\"./" replace_with="src=\\"~assets/" """
-            # >>> magic_comment
-            # 'replace_search="src=\\"./" replace_with="src=\\\\"~assets/" '
-            # >>> magic_comment = r"""test="src=\"<?php echo x ?>" """
-            # regex_split_attributes = re.compile(r"""\s*?(\S+)="([\S<>\?]+)"\s*?""")
-            # regex_split_attributes = re.compile(r"""(\S+)(?<==")(.*)(?=")""")
-            # regex based on https://www.metaltoad.com/blog/regex-quoted-string-escapable-quotes
-            regex_split_attributes = re.compile(
-                r"""(\S+)=((?<![\\])['"])((?:.(?!(?<![\\])\2))*.?)\2"""
-            )
-            mc_attribute_groups = regex_split_attributes.findall(magic_comment)
-            # print("mc_attribute_groups", mc_attribute_groups)
-            for item_name, item_quote, item_value in mc_attribute_groups:
-                # print("* item_name:'{}'  item_value:'{}'".format(item_name, item_value))
-                # decode escape sequences like \" to "
-                item_name = item_name.encode().decode("unicode-escape")
-                # print(" → item_name", item_name)
-                item_value = item_value.encode().decode("unicode-escape")
-                # print(" → item_value", item_value)
-                magic_comment_dict["attributes"][item_name] = item_value
-            list.append(magic_comment_dict)
-        return list
-
-    def magic_comment_handle__src_prepend(self, mc_attributes, input_text):
-        print("magic_comment_handle__src_prepend:")
-        src_prepend = mc_attributes["src_prepend"]
-        print("  src_prepend = ", repr(src_prepend))
-        result_text = input_text.replace('src="', 'src="{}'.format(src_prepend))
-        return result_text
-
-    def magic_comment_handle__replace_search(self, mc_attributes, input_text):
-        print("magic_comment_handle__replace_search:")
-        replace_search = mc_attributes["replace_search"]
-        replace_with = mc_attributes["replace_with"]
-        print("  replace_search = ", repr(replace_search))
-        print("  replace_with = ", repr(replace_with))
-
-        # test text
-        # input_text = """<a-asset-item id="Cube" src="./assets/Cube.gltf" ></a-asset-item>"""
-        result_text = input_text.replace(replace_search, replace_with)
-        print("  → replaced {} occurrences".format(input_text.count(replace_search)))
-        return result_text
-
-    def magic_comment_handle(self, magic_comment, input_text):
-        result_text = input_text
-        mc_attributes = magic_comment["attributes"]
-        # print("mc_attributes = {}".format(repr(mc_attributes)))
-        if len(mc_attributes) > 0:
-            if "src_prepend" in mc_attributes:
-                result_text = self.magic_comment_handle__src_prepend(
-                    mc_attributes, input_text
-                )
-            elif "replace_search" in mc_attributes:
-                result_text = self.magic_comment_handle__replace_search(
-                    mc_attributes, input_text
-                )
-            else:
-                print("attribute names '{}' not implemented.".format(mc_attributes))
-        else:
-            print("empty MAGIC-COMMENT.")
-        return result_text
-
-    def handle_magic_comment(self, input_text):
-        list = self.find_and_parse(input_text)
-        # print("list:")
-        # for mc in list:
-        #     print(" - {}".format(repr(mc["raw_content"])))
-        #     for item in mc["attributes"].items():
-        #         print("   - {}".format(item))
-        for magic_comment in list:
-            input_text = self.magic_comment_handle(magic_comment, input_text)
-        return input_text

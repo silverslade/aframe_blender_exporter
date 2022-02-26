@@ -5,9 +5,7 @@
 
 # import sys
 # import time
-import re
-import shutil
-import math
+
 from string import Template
 import json
 import os
@@ -23,6 +21,7 @@ from .. import blender_helper as b_helper
 from .. import constants
 
 from . import helper
+from .resources import Resources
 from . import templates
 from . import magic_comments
 
@@ -112,179 +111,11 @@ class ExportAframe(object):
         )
 
     ##########################################
-    # output preparations
-    def create_diretories(self):
-        ALL_PATHS = [
-            ".",
-            constants.PATH_ASSETS,
-            constants.PATH_RESOURCES,
-            constants.PATH_MEDIA,
-            constants.PATH_ENVIRONMENT,
-            constants.PATH_JAVASCRIPT,
-            constants.PATH_LIGHTMAPS,
-        ]
-        for p in ALL_PATHS:
-            dp = os.path.join(self.base_path, p)
-            print("--- DEST [%s] [%s] {%s}" % (self.base_path, dp, p))
-            os.makedirs(dp, exist_ok=True)
-
-    ##########################################
-    # resources
-    def add_resouce(
-        self,
-        dest_path,
-        filename,
-        overwrite,
-        include_in,
-        add_asset=False,
-        copy_source=None,
-    ):
-        include_set = self.scene.e_ressource_set
-        if include_set in include_in:
-            SRC_RES = os.path.join(self.script_directory, constants.PATH_RESOURCES)
-            source_fullpath = os.path.join(SRC_RES, filename)
-            if copy_source:
-                source_fullpath = copy_source
-            target_fullpath = os.path.join(self.base_path, dest_path, filename)
-
-            if overwrite:
-                shutil.copyfile(source_fullpath, target_fullpath)
-            else:
-                if not os.path.exists(target_fullpath):
-                    shutil.copyfile(source_fullpath, target_fullpath)
-
-            if add_asset:
-                self.assets.append(
-                    "            "
-                    '<img id="{id}" src="./{path}/{filename}" crossorigin="anonymous" />'
-                    "".format(id=add_asset, path=dest_path, filename=filename)
-                )
-
-    def add_resouce_icons(self):
-        _resources = [
-            # dest_path, filename, overwrite, include_set, add_asset
-            [
-                constants.PATH_RESOURCES,
-                "play.png",
-                False,
-                ["default"],
-                "icon-play",
-            ],
-            [
-                constants.PATH_RESOURCES,
-                "pause.png",
-                False,
-                ["default"],
-                "icon-pause",
-            ],
-            [
-                constants.PATH_RESOURCES,
-                "play-skip-back.png",
-                False,
-                ["default"],
-                "icon-play-skip-back",
-            ],
-            [
-                constants.PATH_RESOURCES,
-                "mute.png",
-                False,
-                ["default"],
-                "icon-mute",
-            ],
-            [
-                constants.PATH_RESOURCES,
-                "volume-low.png",
-                False,
-                ["default"],
-                "icon-volume-low",
-            ],
-            [
-                constants.PATH_RESOURCES,
-                "volume-high.png",
-                False,
-                ["default"],
-                "icon-volume-high",
-            ],
-        ]
-        for resource in _resources:
-            self.add_resouce(*resource)
-
-    def add_resouce_enviroment(self):
-        """add environment box."""
-        _resources = [
-            # dest_path, filename, overwrite, include_set, add_asset
-            # [constants.PATH_ENVIRONMENT, "negx.jpg", True, ["default"], "negx"],
-            # [constants.PATH_ENVIRONMENT, "negy.jpg", True, ["default"], "negy"],
-            # [constants.PATH_ENVIRONMENT, "negz.jpg", True, ["default"], "negz"],
-            # [constants.PATH_ENVIRONMENT, "posx.jpg", True, ["default"], "posx"],
-            # [constants.PATH_ENVIRONMENT, "posy.jpg", True, ["default"], "posy"],
-            # [constants.PATH_ENVIRONMENT, "posz.jpg", True, ["default"], "posz"],
-            [constants.PATH_ENVIRONMENT, "negx.jpg", True, ["default"], False],
-            [constants.PATH_ENVIRONMENT, "negy.jpg", True, ["default"], False],
-            [constants.PATH_ENVIRONMENT, "negz.jpg", True, ["default"], False],
-            [constants.PATH_ENVIRONMENT, "posx.jpg", True, ["default"], False],
-            [constants.PATH_ENVIRONMENT, "posy.jpg", True, ["default"], False],
-            [constants.PATH_ENVIRONMENT, "posz.jpg", True, ["default"], False],
-        ]
-
-        for resource in _resources:
-            self.add_resouce(*resource)
-
-    def add_resouce_example_media(self):
-        """add example media."""
-        _resources = [
-            # dest_path, filename, overwrite, include_set, add_asset
-            [constants.PATH_MEDIA, "image1.png", False, ["default"], "image1"],
-            [constants.PATH_MEDIA, "image2.png", False, ["default"], "image2"],
-        ]
-
-        for resource in _resources:
-            self.add_resouce(*resource)
-
-    def add_resouce_basic_html_js(self):
-        """Add all things needed for the basic html website."""
-        _resources = [
-            # dest_path, filename, overwrite, include_set, add_asset
-            [".", "favicon.ico", False, ["default", "minimal"], False],
-            [".", "style.css", False, ["default", "minimal"], False],
-            [
-                constants.PATH_JAVASCRIPT,
-                "webxr.js",
-                True,
-                ["default", "minimal"],
-                False,
-            ],
-            [
-                constants.PATH_JAVASCRIPT,
-                "joystick.js",
-                True,
-                ["default", "minimal"],
-                False,
-            ],
-            [
-                constants.PATH_JAVASCRIPT,
-                "camera-cube-env.js",
-                True,
-                ["default", "minimal"],
-                False,
-            ],
-        ]
-
-        for resource in _resources:
-            self.add_resouce(*resource)
-
-    def resouce_handling(self):
-        """Add all needed resources."""
-        self.add_resouce_basic_html_js()
-        self.add_resouce_icons()
-        self.add_resouce_enviroment()
-        self.add_resouce_example_media()
-
-    ##########################################
     # helper
-    def format_float(self, x):
-        return helper.format_float(
-            x,
+    def get_object_coordinates(self, obj):
+        return helper.get_object_coordinates(
+            obj,
+            scalefactor=self.scalefactor,
             precision=self.scene.b_float_precision_max,
             min=self.scene.b_float_precision_min,
         )
@@ -399,51 +230,6 @@ class ExportAframe(object):
             #     "".format(obj_name=obj.name)
             # )
         return gltf_name
-
-    def get_object_coordinates(self, obj):
-        transforms = {
-            "location": "0 0 0",
-            "rotation": "0 0 0",
-            "scale": "1 1 1",
-        }
-        if hasattr(obj, "location"):
-            helper.apply_parent_inverse(obj)
-
-            # bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS', center='BOUNDS')
-            # bpy.ops.object.origin_set(type="ORIGIN_GEOMETRY")
-            location = obj.location.copy()
-            transforms["location"] = "{x} {z} {y}".format(
-                x=self.format_float(location.x),
-                z=self.format_float(location.z),
-                y=self.format_float(-location.y),
-            )
-
-            transforms["scale"] = "{x} {z} {y}".format(
-                x=self.format_float(self.scalefactor * obj.scale.x),
-                z=self.format_float(self.scalefactor * obj.scale.z),
-                y=self.format_float(self.scalefactor * obj.scale.y),
-            )
-            # print(self.line_indent + "* scale calculation:")
-            # print(self.line_indent + "  - scalefactor: {}".format(self.scalefactor))
-            # print(self.line_indent + "  - scale.x: {}".format(obj.scale.x))
-
-            # first reset rotation_mode to QUATERNION (otherwise it can have buggy side-effects)
-            obj.rotation_mode = "QUATERNION"
-            # force rotation_mode to YXZ to be compatible with our export
-            obj.rotation_mode = "YXZ"
-            rotation = obj.rotation_euler.copy()
-            # https://aframe.io/docs/1.2.0/components/rotation.html#sidebar
-            # pi = 22.0/7.0
-            transforms["rotation"] = "{x} {z} {y}".format(
-                x=self.format_float(math.degrees(rotation.x)),
-                z=self.format_float(math.degrees(rotation.z)),
-                y=self.format_float(math.degrees(-rotation.y)),
-            )
-
-        # print(self.line_indent + "* transforms[location]", transforms["location"])
-        # print(self.line_indent + "* transforms[scale]", transforms["scale"])
-        # print(self.line_indent + "* transforms[rotation]", transforms["rotation"])
-        return transforms
 
     def handle_propertie_video(self, *, prop, obj):
         attributes = []
@@ -572,7 +358,7 @@ class ExportAframe(object):
         self.line_indent_level_out()
 
     def export_object(self, *, obj, entity_attributes, mesh_name=None):
-        print(self.line_indent + "* export_object", obj)
+        # print(self.line_indent + "* export_object", obj.name)
         # prepare export
         gltf_name = ""
         if not any(item.startswith(("image", "video")) for item in entity_attributes):
@@ -601,17 +387,38 @@ class ExportAframe(object):
     def export_type_ARMATURE(self, obj, entity_attributes, transforms, lines):
         lines.append(self.line_indent + "ARMATURE")
         entity_content = ""
+        follow_constraints = None
+        follow_constraints_enabled_backup = None
         if obj.constraints:
             # constraints = iter(obj.constraints)
             # while (constraint := next(constraints, None)) is not None:
             for constraint in obj.constraints:
                 if constraint.type == "FOLLOW_PATH":
-                    # reset transforms -
-                    # the FOLLOW_PATH constraints means some tweaks here...
-                    # or at least we hope that the path was baked to an action..
-                    transforms["location"] = "0 0 0"
-                    transforms["rotation"] = "0 0 0"
-                    transforms["scale"] = "1 1 1"
+                    follow_constraints = constraint
+        if follow_constraints:
+            # reset transforms -
+            # the FOLLOW_PATH constraints means some tweaks here...
+            # or at least we hope that the path was baked to an action..
+            # transforms["location"] = "0 0 0"
+            # transforms["rotation"] = "0 0 0"
+            # transforms["scale"] = "1 1 1"
+            # get target transforms
+            follow_path_transforms = self.get_object_coordinates(
+                follow_constraints.target
+            )
+            # use this - this way all
+            transforms["location"] = follow_path_transforms["location"]
+            transforms["rotation"] = follow_path_transforms["rotation"]
+            transforms["scale"] = follow_path_transforms["scale"]
+
+            # disable influcense
+            follow_constraints_enabled_backup = follow_constraints.enabled
+            follow_constraints.enabled = False
+
+            # clear transforms - maybe they are alterd by the animation system...
+            obj.location.zero()
+            obj.rotation_euler.zero()
+
         # gltf_name = self.export_object(
         #     obj=obj,
         #     entity_attributes=entity_attributes,
@@ -642,6 +449,10 @@ class ExportAframe(object):
             # lines.extend(lines_temp)
             # entity_content += entity_content_temp
             self.line_indent_level_out()
+
+        if follow_constraints:
+            # restore influcense
+            follow_constraints.enabled = follow_constraints_enabled_backup
         return entity_content
 
     def export_type_EMPTY(self, obj, entity_attributes, transforms, lines):
@@ -946,7 +757,7 @@ class ExportAframe(object):
             include_in = ["default", "minimal", "external"]
             add_asset = id
             copy_source = full_filepath
-            self.add_resouce(
+            self.resources.add_resource(
                 dest_path,
                 filename,
                 overwrite,
@@ -956,7 +767,8 @@ class ExportAframe(object):
             )
         else:
             self.entities.append(
-                "        " '<a-sky id="#{id}" color="#ECECFF"></a-sky>'.format(id=id)
+                self.line_indent
+                + '<a-sky id="#{id}" color="#ECECFF"></a-sky>'.format(id=id)
             )
 
     def get_raycaster_showvr(self):
@@ -1130,9 +942,14 @@ class ExportAframe(object):
         print("[AFRAME EXPORTER] ressources path = " + self.script_directory)
         print("[AFRAME EXPORTER] target path     = " + self.base_path)
 
-        self.create_diretories()
-
-        self.resouce_handling()
+        self.resources = Resources(
+            scene=self.scene,
+            assets=self.assets,
+            base_path=self.base_path,
+            script_directory=self.script_directory,
+        )
+        self.resources.create_diretories()
+        self.resources.handle_resources()
 
         self.traverse_collection_and_object_tree()
 
