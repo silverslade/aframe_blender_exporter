@@ -10,6 +10,10 @@ import math
 # statics
 
 
+def to_hex(c):
+    return "#%02x%02x%02x" % (int(c.r * 255), int(c.g * 255), int(c.b * 255))
+
+
 def format_float(x, precision=6, min=1):
     # inspired by
     # https://stackoverflow.com/a/65721367/574981

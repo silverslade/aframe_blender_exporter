@@ -482,6 +482,63 @@ class ExportAframe(object):
                 self.export_object(obj=obj, entity_attributes=entity_attributes)
         return entity_content
 
+    def export_type_LIGHT(self, obj, entity_attributes, transforms, lines):
+        lines.append(self.line_indent + "light '{}'".format(obj.name))
+        entity_content = ""
+
+        print(
+            self.line_indent + "  → ",
+            obj.name,
+            obj.data.type,
+            obj.data.color,
+            obj.data.distance,
+            obj.data.cutoff_distance,
+        )
+        # distance = str(obj.data.distance)
+        color_hex = helper.to_hex(obj.data.color)
+        print("color = " + color_hex)
+        # default light type
+        light_type = "directional"
+        if obj.data.type == "POINT":
+            light_type = "point"
+        elif obj.data.type == "SUN":
+            light_type = "directional"
+        elif obj.data.type == "SPOT":
+            light_type = "spot"
+        cutoff_distance = str(obj.data.cutoff_distance)
+        intensity = str(1.0)
+        if self.scene.b_cast_shadows:
+            cast_shadows = "true"
+        else:
+            cast_shadows = "false"
+        entity_attributes.append(
+            'light="'
+            "castShadow:{cast_shadows}; "
+            "color:{color}; "
+            "cutoff_distance:{cutoff_distance}; "
+            "light_type:{light_type}; "
+            "intensity:{intensity}; "
+            "shadowBias: -0.001; "
+            "shadowCameraFar: 501.02; "
+            "shadowCameraBottom: 12; "
+            "shadowCameraFov: 101.79; "
+            "shadowCameraNear: 0; "
+            "shadowCameraTop: -5; "
+            "shadowCameraRight: 10; "
+            "shadowCameraLeft: -10; "
+            "shadowRadius: 2;"
+            '"'
+            "".format(
+                cast_shadows=cast_shadows,
+                color=color_hex,
+                cutoff_distance=cutoff_distance,
+                light_type=light_type,
+                intensity=intensity,
+            )
+        )
+
+        return entity_content
+
     def export_entity_prepare(self, *, obj, entity_attributes, transforms):
         # print(
         #     self.line_indent + "'export_entity_prepare' - entity_attributes:",
@@ -551,6 +608,11 @@ class ExportAframe(object):
             entity_content += self.export_type_EMPTY(
                 obj, entity_attributes, transforms, lines
             )
+        elif obj.type == "LIGHT":
+            if not self.scene.b_use_default_lights:
+                entity_content += self.export_type_LIGHT(
+                    obj, entity_attributes, transforms, lines
+                )
         else:
             msg = (
                 self.line_indent
@@ -585,40 +647,29 @@ class ExportAframe(object):
         return entity_str, lines
 
     def traverse_objects(self, objects, allow_childs=False):
-        exclusion_obj_types = ["CAMERA", "LIGHT"]
         entity_content = ""
         lines = []
         for obj in objects:
             msg = self.line_indent + "object '{}' ({}) ".format(obj.name, obj.type)
             if self.helper.get_object_visible(obj):
-                if obj.type not in exclusion_obj_types:
-                    # ignore non direct childs
-                    if not (obj.parent and not allow_childs):
-                        msg += "export.."
-                        print(msg)
-                        lines.append(msg)
-
-                        self.line_indent_level_in()
-                        entity_content_temp, lines_temp = self.traverse_object(obj)
-                        lines.extend(lines_temp)
-                        entity_content += entity_content_temp
-                        self.line_indent_level_out()
-
-                        self.entities_created += 1
-                    else:
-                        if self.debug:
-                            msg += "ignored: has parent."
-                            print(msg)
-                            lines.append(msg)
-                else:
-                    msg = (
-                        b_helper.colors.fg.yellow
-                        + msg
-                        + "ignored: not implemented"
-                        + b_helper.colors.reset
-                    )
+                # ignore non direct childs
+                if not (obj.parent and not allow_childs):
+                    msg += "export.."
                     print(msg)
                     lines.append(msg)
+
+                    self.line_indent_level_in()
+                    entity_content_temp, lines_temp = self.traverse_object(obj)
+                    lines.extend(lines_temp)
+                    entity_content += entity_content_temp
+                    self.line_indent_level_out()
+
+                    self.entities_created += 1
+                else:
+                    if self.debug:
+                        msg += "ignored: has parent."
+                        print(msg)
+                        lines.append(msg)
             else:
                 msg += "ignored: not visible"
                 print(msg)
@@ -771,6 +822,42 @@ class ExportAframe(object):
                 + '<a-sky id="#{id}" color="#ECECFF"></a-sky>'.format(id=id)
             )
 
+    def handle_default_lights(self):
+        if self.scene.b_use_default_lights:
+            self.entities.append(
+                """
+                    <a-entity
+                        light="
+                            type: directional;
+                            intensity: ${directional_intensity};;
+                            castShadow: ${cast_shadows};
+                            shadowBias: -0.0004;
+
+                            shadowMapHeight: 2048;
+                            shadowMapWidth: 2048;
+
+                            shadowCameraNear: 0;
+                            shadowCameraFar: 50;
+                            shadowCameraFov: 102;
+
+                            shadowCameraBottom: 12;
+                            shadowCameraTop: -5;
+                            shadowCameraRight: 10;
+                            shadowCameraLeft: -10;
+
+                            shadowRadius: 2
+                        "
+                        position="1.4 7.2 1"
+                    ></a-entity>
+                    <a-entity
+                        light="
+                            type: ambient;
+                            intensity: ${ambient_intensity}
+                        "
+                    ></a-entity>
+                """
+            )
+
     def get_raycaster_showvr(self):
         raycaster = ""
         if self.scene.b_raycast:
@@ -921,7 +1008,6 @@ class ExportAframe(object):
 
         self.assets = []
         self.entities = []
-        self.lights = []
         self.exported_gltf_objects = []
 
         self.scene.s_output = "exporting..."
@@ -954,6 +1040,7 @@ class ExportAframe(object):
         self.traverse_collection_and_object_tree()
 
         self.handle_sky()
+        self.handle_default_lights()
 
         print("entities handling finished.")
         print("---")

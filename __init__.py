@@ -997,7 +997,3 @@ def unregister():
 # to test the add-on without having to install it.
 if __name__ == "__main__":
     register()
-
-
-def to_hex(c):
-    return "#%02x%02x%02x" % (int(c.r * 255), int(c.g * 255), int(c.b * 255))
