@@ -839,29 +839,39 @@ class ExportAframe(object):
 
     def handle_sky(self):
         id = "sky"
-        if self.scene.b_show_env_sky:
+
+        # get env_texture
+        env_texture_full_filepath = None
+        filename = "sky.jpg"
+        try:
+            env_texture = bpy.data.worlds["World"].node_tree.nodes[
+                "Environment Texture"
+            ]
+            env_texture_full_filepath = env_texture.image.filepath_from_user()
+            filename = env_texture.image.name
+        except KeyError as e:
+            if "Environment Texture" in str(e):
+                self.report(
+                    {"ERROR"},
+                    "Environment Texture not found in world node setup. Fallback to simple color",
+                )
+            else:
+                print("environment exception:", repr(e))
+        except Exception as e:
+            self.report({"ERROR"}, e)
+
+        if self.scene.b_show_env_sky and env_texture_full_filepath:
             self.entities.append(
                 "        "
                 '<a-sky src="#{id}" material="" geometry="" rotation="0 90 0"></a-sky>'
                 "".format(id=id)
             )
-            filename = "sky.jpg"
-            full_filepath = "."
-            try:
-                env_texture = bpy.data.worlds["World"].node_tree.nodes[
-                    "Environment Texture"
-                ]
-                full_filepath = env_texture.image.filepath_from_user()
-                filename = env_texture.image.name
-            except Exception as e:
-                self.report({"ERROR"}, e)
-
             # TODO: if image is packed - unpack
             dest_path = constants.PATH_ENVIRONMENT
             overwrite = False
             include_in = ["default", "minimal", "external"]
             add_asset = id
-            copy_source = full_filepath
+            copy_source = env_texture_full_filepath
             self.resources.add_resource(
                 dest_path,
                 filename,
@@ -1072,7 +1082,11 @@ class ExportAframe(object):
         self.script_directory = os.path.normpath(self.script_directory)
 
         # Destination base path
-        self.base_path = os.path.join(self.scene.export_path, self.scene.s_project_name)
+        # use `bpy.path.abspath` to allow for blender relative paths
+        # https://docs.blender.org/api/current/bpy.path.html#bpy.path.abspath
+        self.base_path = bpy.path.abspath(
+            os.path.join(self.scene.export_path, self.scene.s_project_name)
+        )
 
         if __name__ == "__main__":
             print("inside blend file")
