@@ -483,7 +483,7 @@ class AframeServe_OT_Operator(bpy.types.Operator):
         scene = content.scene
         Server.instance = Server()
         Server.instance.set_folder(
-            os.path.join(scene.export_path, scene.s_project_name)
+            bpy.path.abspath(os.path.join(scene.export_path, scene.s_project_name))
         )
         Server.instance.start()
 
@@ -570,7 +570,7 @@ _props = [
         "export_path",
         "Export To",
         "Path to the folder containing the files to import",
-        ".",
+        "//",
         "FILE_PATH",
     ),
     (
