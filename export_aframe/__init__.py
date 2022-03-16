@@ -775,7 +775,9 @@ class ExportAframe(object):
 
     ##########################################
     def export_single_model(self):
+        self.entities_created = 0
         print("[AFRAME EXPORTER] Exporting one single global mesh")
+        
         if self.scene.b_cast_shadows:
             single_cast_shadows = "true"
         else:
@@ -800,7 +802,7 @@ class ExportAframe(object):
         )
 
         bpy.ops.object.select_all(action="SELECT")
-        filename = os.path.join(constants.DEST_RES, constants.PATH_ASSETS, "MainMesh")
+        filename = os.path.join(self.base_path, constants.PATH_ASSETS, "MainMesh")
         bpy.ops.export_scene.gltf(
             filepath=filename,
             export_format="GLTF_EMBEDDED",
@@ -826,7 +828,7 @@ class ExportAframe(object):
             export_displacement=True,
         )
         bpy.ops.object.select_all(action="DESELECT")
-
+        self.entities_created += 1
     ##########################################
 
     def get_shadow(self):
