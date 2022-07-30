@@ -203,6 +203,8 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.prop(scene, "f_raycast_length")
             box.prop(scene, "f_raycast_interval")
             box.prop(scene, "f_player_speed")
+            box.prop(scene, "b_camera_catch_cursor")
+
             box.prop(scene, "b_use_active_camera")
             if not scene.b_use_active_camera:
                 box.prop(scene, "f_player_height")
@@ -971,6 +973,10 @@ def register():
 
 
 def unregister():
+    if Server.instance:
+        Server.instance.stop()
+        Server.instance = None
+
     bpy.utils.unregister_class(AframeExportPanel_PT_Panel)
     bpy.utils.unregister_class(AframeBake_OT_Operator)
     bpy.utils.unregister_class(AframeClean_OT_Operator)
