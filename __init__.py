@@ -195,15 +195,17 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             icon_only=False,
             emboss=False,
         )
-        row.label(text="Player", icon="NONE")
+        row.label(text="Player / Camera", icon="NONE")
         if scene.b_player:
             row = layout.row(align=True)
             box = row.box()
             box.prop(scene, "b_raycast")
             box.prop(scene, "f_raycast_length")
             box.prop(scene, "f_raycast_interval")
-            box.prop(scene, "f_player_height")
             box.prop(scene, "f_player_speed")
+            box.prop(scene, "b_use_active_camera")
+            if not scene.b_use_active_camera:
+                box.prop(scene, "f_player_height")
             box.separator()
         row = layout.row(align=True)
         row.prop(
@@ -646,8 +648,14 @@ _props = [
         "Use Lightmapper for baking",
     ),
     ("bool", "b_camera_cube", "Camera Cube Env", "Enable Camera Cube Env component"),
-    ("float", "f_player_height", "Player Height", "Player Height", 1.7),
     ("bool", "b_raycast", "Enable Raycast", "Enable Raycast"),
+    ("float", "f_player_height", "Player Height", "Player Height", 1.7),
+    (
+        "bool",
+        "b_use_active_camera",
+        "Use Active Camera",
+        "Use the currently active blender camera as player position",
+    ),
     ("bool", "b_show_env_sky", "Show Environment Sky", "Show Environment Sky", True),
     (
         "int",
