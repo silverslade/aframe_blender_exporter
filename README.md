@@ -11,7 +11,7 @@ This is an open source project under MIT terms, so feel free to email me or ask 
 
 ## Features
 
-+ Pure Blender Add-On (tested on Blender 2.91.2)
++ Pure Blender Add-On (tested on Blender 3.0, newer versions aren't compatible yet)
 + Simple UI for configuration
 + It exports and creates a new A-Frame project
 + Optimized Pipeline: Model with blender -> export -> test on browser
