@@ -5,6 +5,7 @@
 - click to toogle a 3D object
 - add Integrated Bake Process similar to [@anfeo](https://github.com/anfeo) 
 
+
 ## CHANGELOG
 
 All notable changes to this project will be documented in this file.
@@ -12,11 +13,18 @@ All notable changes to this project will be documented in this file.
 - NEW = New Feature
 - FIX = Bug Fix
 
-## [0.0.9] - work in progress
+## [0.0.10] - Work in progress
 
+
+## [0.0.9] - 2023-04-29
+
+- [NEW] update to Blender 3.5.1
 - [NEW] internal "index.html" template is reset after unregistering the add-on (to be sure it's the latest version)
+- [NEW] added a bat file to open http server as package "start_server.bat" (needs python 3 and Chrome installed on windows)
+- [NEW] temporary diabled the Naxela add-on integration
 
 ## [0.0.8] - 2021-06-15
+
 - [NEW] Export blender lights
 - [NEW] Export scene as single glTF mesh file
 

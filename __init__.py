@@ -1,6 +1,6 @@
 '''
 AFRAME Exporter for Blender
-Copyright (c) 2021 Alessandro Schillaci
+Copyright (c) 2023 Alessandro Schillaci
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -210,7 +210,7 @@ def default_template():
 
 class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_idname = "AFRAME_EXPORT_PT_Panel"
-    bl_label = "Aframe Exporter (v 0.0.9b01)"
+    bl_label = "Aframe Exporter (v 0.0.9)"
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -309,7 +309,7 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.operator('aframe.clean', text='4 Clean Lightmaps')            
             #box.separator()         
         row = layout.row(align=True) 
-        '''
+
         row.prop(scene, 'b_bake_lightmap', text= "", icon="TRIA_DOWN" if getattr(scene, 'b_bake_lightmap') else "TRIA_RIGHT", icon_only=False, emboss=False)
         row.label(text="Create Lightmaps", icon='NONE')
         if scene.b_bake_lightmap:
@@ -326,7 +326,7 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.operator('aframe.clean', text='4 Clean Lightmaps')            
             #box.separator()         
         row = layout.row(align=True)  
-        
+        '''        
         row.prop(scene, 'b_export', text= "", icon="TRIA_DOWN" if getattr(scene, 'b_export') else "TRIA_RIGHT", icon_only=False, emboss=False)
         row.label(text="Exporter", icon='NONE')
         if scene.b_export:
@@ -538,6 +538,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
         _resources = [
             [ ".", "favicon.ico", True ],
             [ ".", "style.css" , True],
+            [ ".", "start_server.bat" , True],
             [ PATH_RESOURCES, "sky.jpg", False ],
             [ PATH_RESOURCES, "play.png", False ],
             [ PATH_RESOURCES, "pause.png", False],
@@ -590,7 +591,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
             filename = os.path.join ( DEST_RES, PATH_ASSETS, "MainMesh" ) # + '.glft' )
 #            bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True)
 #            obj.select_set(state=True)
-            bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True, export_texcoords = True, export_normals = True, export_draco_mesh_compression_enable = False, export_draco_mesh_compression_level = 6, export_draco_position_quantization = 14, export_draco_normal_quantization = 10, export_draco_texcoord_quantization = 12, export_draco_generic_quantization = 12,export_tangents = True, export_materials = 'EXPORT', export_colors = True, export_extras = True, export_yup = True, export_apply = True, export_animations = True, export_frame_range = True, export_frame_step = 1, export_force_sampling = True, export_displacement = True)
+            bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True, export_texcoords = True, export_normals = True, export_draco_mesh_compression_enable = False, export_draco_mesh_compression_level = 6, export_draco_position_quantization = 14, export_draco_normal_quantization = 10, export_draco_texcoord_quantization = 12, export_draco_generic_quantization = 12,export_tangents = True, export_materials = 'EXPORT', export_colors = True, export_extras = True, export_yup = True, export_apply = True, export_animations = True, export_frame_range = True, export_frame_step = 1, export_force_sampling = True)
             bpy.ops.object.select_all(action='DESELECT')
         else:
             # MULTI MESH EXPORTING
@@ -696,7 +697,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                                 
                             filename = os.path.join ( DEST_RES, PATH_ASSETS, obj.name ) # + '.glft' )
                             #bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True)
-                            bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True, export_texcoords = True, export_normals = True, export_draco_mesh_compression_enable = False, export_draco_mesh_compression_level = 6, export_draco_position_quantization = 14, export_draco_normal_quantization = 10, export_draco_texcoord_quantization = 12, export_draco_generic_quantization = 12,export_tangents = True, export_materials = 'EXPORT', export_colors = True, export_extras = True, export_yup = True, export_apply = True, export_animations = True, export_frame_range = True, export_frame_step = 1, export_force_sampling = True, export_displacement = True)
+                            bpy.ops.export_scene.gltf(filepath=filename, export_format='GLTF_EMBEDDED', use_selection=True, export_texcoords = True, export_normals = True, export_draco_mesh_compression_enable = False, export_draco_mesh_compression_level = 6, export_draco_position_quantization = 14, export_draco_normal_quantization = 10, export_draco_texcoord_quantization = 12, export_draco_generic_quantization = 12,export_tangents = True, export_materials = 'EXPORT', export_colors = True, export_extras = True, export_yup = True, export_apply = True, export_animations = True, export_frame_range = True, export_frame_step = 1, export_force_sampling = True)
                             assets.append('\n\t\t\t\t<a-asset-item id="'+obj.name+'" src="./assets/'+obj.name + '.gltf'+'"></a-asset-item>')
                             if scene.b_cast_shadows:
                                 entities.append('\n\t\t\t<a-'+tag+' id="#'+obj.name+'" '+gltf_model+' scale="1 1 1" position="'+actualposition+'" visible="true" shadow="cast: true" '+reflections+animation+link+custom+toggle+'></a-'+tag+'>')
@@ -1025,8 +1026,8 @@ def unregister():
     bpy.utils.unregister_class(ToogleObjects)    
     bpy.utils.unregister_class(ShowHideObject)      
 
-    for p in _props:
-        del bpy.types.Scene [ p [ 1 ] ]
+    #for p in _props:
+    #    del bpy.types.Scene [ p [ 1 ] ]
 
     # deletes intex.html template embeded file
     for t in bpy.data.texts:

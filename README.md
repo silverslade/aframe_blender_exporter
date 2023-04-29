@@ -6,18 +6,18 @@ The generated sources can be modified manually according to your project needs a
 This is an open source project under MIT terms, so feel free to email me or ask for a pull request, or just offer me a coffe!
 
 <p align="center">
-  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/aframe_exporter_0_0_7.png">
+  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/aframe_exporter_0_0_9.png">
 </p>
 
 ## Features
 
-+ Pure Blender Add-On (tested on Blender 2.91.2)
++ Pure Blender Add-On (tested on Blender 3.5.1)
 + Simple UI for configuration
 + It exports and creates a new A-Frame project
 + Optimized Pipeline: Model with blender -> export -> test on browser
 + Use of a A-Frame html template saved inside the blend file (to make a higher customisation)
 + Open Source (MIT)
-+ Optional: use baked Lightmaps generated with [The Lightmapper Add-on](https://github.com/Naxela/The_Lightmapper) by Naxela
+
 
 ## Changelog & todo
 
@@ -48,12 +48,11 @@ This Addon manages the following settings (all of them switchable inside the UI)
 ## Installation
 
 + Download the latest release version from [Itch.io](https://silverslade.itch.io/a-frame-blender-exporter)
-+ Open Blender (2.83+)
++ Open Blender (3.5.1)
 + Edit -> Preferences -> Add-ons -> Install
 + Browse and choose the addon zip file
 + Enable the addon
-+ Note: This addon requires the glTF Exporter 2.0 (Add-on version v1.2.75)
-+ Note: If you want to use baked Lightmaps, it requires the Lightmapper Add-on, [The Lightmapper Add-on](https://github.com/Naxela/The_Lightmapper). You have to install it manually.
++ Note: This addon requires the glTF Exporter 2.0
 
 ## How to use this A-Frame Blender Exporter
 
@@ -65,27 +64,39 @@ This Addon manages the following settings (all of them switchable inside the UI)
 + Open a new/existing blender scene.
 + Open the View3D window (`n` key) to show the export window.
 + Set up best settings for your scene
-+ Click on `Export to A-Frame project`
-+ Launch a local web server to test your WebVR page: there are several possibilities:
-    + run the embedded server, click on the `Start Serving` button
-    + run `live-server` under npm (install it with `npm install -g live-server`)
-    + run `python -m SimpleHTTPServer`
++ Click on `Export to A-Frame project` -> a-frame web project will be generated
 + Customize the 'index.html'-template in the Script-tab for future exports
 + Use `Custom Properties` of blender-objects to control tags/attributes ([example](https://gist.github.com/coderofsalvation/2468dc3dfbaca0520cd65c20dfad7eb8))
 
-For massive exports, 'live-server' could be more useful because it can manage a content auto-refresh.
+
+## How to view the 3D scene
+
+### How to execute the A-Frame 3D scene from Blender
++ click on `Start Serving` -> a simple http server in python will start 
++ click on `Open Preview` -> to launch your local server web with the 3D scene
++ click on `Stop Serving` -> to stop the http server
++ Note: Don't close Blender until you stop the http server. Always click on "Stop Serving" before close Blender
+
+
+### How to execute the A-Frame 3D scene standalone
+Launch a local web server to test your WebVR page: there are several possibilities
++ run the embedded server, click on the `Start Serving` button
++ run `live-server` under npm (install it with `npm install -g live-server`)
++ run `python -m SimpleHTTPServer` 
++ run the `start_server.bat` file inside the output directory
++ For massive exports, 'live-server' could be more useful because it can manage a content auto-refresh.
+
 
 For further instructions, see the official [project page](https://silverslade.itch.io/a-frame-blender-exporter).
 
 ### Main UI configuration
 
-Main Ui for the current version 0.0.7.
+Main Ui for the current version 0.0.9.
 For a better usability, the add-on is divided into 6 main panels: 
 + A-frame
 + Renderer
 + Player
 + Interactive/action
-+ Create Lightmaps
 + Exporter
 
 
@@ -149,22 +160,6 @@ For a better usability, the add-on is divided into 6 main panels:
 | Add Link Web | Enable html link when clicking on the selected object  |  | 
 | Add Video | set a mp4 video for the selected object  (plane mesh) |  | 
 
-#### Create Lightmaps Panel
-
-<p align="center">
-  <img src="https://github.com/silverslade/aframe_blender_exporter/raw/master/images/create_lightmaps_0_0_7.png">
-</p>
-
-| Property       | Description      | Default Value                          |
-|----------------|------------------|----------------------------------|
-| Use Lightmapper Add-on for bake lightmaps | If checked the generated lightmaps will be used for the meshes| `False` | 
-| 0 "Delete all Lightmaps" | clear memory and files lightmaps |  | 
-| 1 "Prepare Selection for Lightmapper" | select objects for bake and set Lightmapper configuration| WIP  | 
-| 2 "Bake with Lightmapper" | Bake with the Lightmapper add-on | (wait the end of the process, better is toggle on Window -> System Console) | 
-| 3 "Save Lightmaps" | all lightmaps will be copied inside a "lightmaps" directory in the target project |  | 
-| 4 "Clean Lightmaps | it's needed because the changes to the shaders can be incompatible with A-Frame |  | 
-
-
 #### Exporter Panel
 
 <p align="center">
@@ -177,28 +172,6 @@ For a better usability, the add-on is divided into 6 main panels:
 | Export To | Target Directory where the `Name` Directory will be created | `C:/temp/` | 
 | Clear Assets Directory | To remove old 3d models from the main assets dir |  | 
 
-### The Lightmapper Add-on
-
-Since the 0.0.5+ version, the A-Frame Exporter will be compatible with the Lightmapper Add-on by Naxela.
-
-The Lightmapper Add-on is an open source Blender Add-on project for an incredibly quick baking process: it uses the GPU and it can be configured to use a denoiser and an open CV module to clean the lightmaps. It can be much faster than the Blender Bake standard process.
-
-To use the Lightmapper for baking lightmaps:
-
-+ Install the Add-on from [Here](https://github.com/Naxela/The_Lightmapper)
-+ Install and configure the denoise and opencv 
-+ Untick the "Cast Shadows" option
-+ Open the "Bake" panel and follow the enumerated buttons
-+ 0 "Delete all Lightmaps"
-+ 1 "Prepare Selection for Lightmapper"
-+ 2 "Bake with Lightmapper" (wait the end of the process, better is toggle on Window -> System Console)
-+ 3 "Save Lightmaps" (all lightmaps will be copied inside a "lightmaps" directory in the target project)
-+ 4 "Clean Lightmaps" (it's needed because the changes to the shaders can be incompatible with A-Frame)
-+ Then you can use Aframe exporter as usual - "Export A-Frame project" (it will load the saved lightmaps and it will apply them to the a frame component)
-+ Remember to make backups. Often.
-
-Though the process may seem quite rough, it works. In the future release I'll work for a more linear process.
-But in few minutes you can enjoy a complex baked scene inside A-Frame with just few clicks.
 
 # Credits
 
@@ -231,7 +204,7 @@ In this case, drop me a line.
 # License
 The MIT License (MIT)
 
-Copyright (c) 2021 Alessandro Schillaci
+Copyright (c) 2023 Alessandro Schillaci
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
