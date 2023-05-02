@@ -4,6 +4,7 @@
 - click to show/hide a 3D object
 - click to toogle a 3D object
 - add Integrated Bake Process similar to [@anfeo](https://github.com/anfeo) 
+- remove the "start_server.bat" and add a python script to run a local web server
 
 
 ## CHANGELOG
