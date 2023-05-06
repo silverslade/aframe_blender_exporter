@@ -59,8 +59,8 @@ bl_info = {
     "name" : "Import-Export: a-frame webvr exporter",
     "author" : "Alessandro Schillaci",
     "description" : "Blender Exporter to AFrame WebVR application",
-    "blender" : (2, 83, 0),
-    "version" : (0, 0, 9),
+    "blender" : (3, 5, 0),
+    "version" : (0, 0, 10),
     "location" : "View3D",
     "warning" : "",
     "category" : "3D View"
@@ -147,6 +147,7 @@ def default_template():
         tpl.from_string('''<!doctype html>
 <html lang="en">
     <!-- Generated automatically by AFRAME Exporter for Blender - https://silverslade.itch.io/a-frame-blender-exporter -->
+    <!-- MIT License: https://github.com/silverslade/aframe_blender_exporter/blob/master/LICENSE -->
     <head>
         <title>WebXR Application</title>
         <link rel="icon" type="image/png" href="favicon.ico"/>
@@ -205,12 +206,13 @@ def default_template():
     </body>
 </html>
 <!-- Generated automatically by AFRAME Exporter for Blender - https://silverslade.itch.io/a-frame-blender-exporter -->
+<!-- MIT License: https://github.com/silverslade/aframe_blender_exporter/blob/master/LICENSE -->
 ''')
 
 
 class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_idname = "AFRAME_EXPORT_PT_Panel"
-    bl_label = "Aframe Exporter (v 0.0.9)"
+    bl_label = "Aframe Exporter (v 0.0.10b01)"
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -510,7 +512,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
         assets = []
         entities = []
         lights = []
-        print("[AFRAME EXPORTER] Exporting project...")
+        print("[AFRAME EXPORTER] Starting Exporting Project.....................................")
         scene = content.scene
         scene.s_output = "exporting..."
         script_file = os.path.realpath(__file__)
@@ -526,7 +528,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
             #print(os.path.dirname(directory))
             directory = os.path.dirname(directory)
 
-        print("[AFRAME EXPORTER] Target Dir = "+directory)
+        print("[AFRAME EXPORTER] Target Output Directory = "+directory)
 
         ALL_PATHS = [ ".", PATH_ASSETS, PATH_RESOURCES, PATH_MEDIA, PATH_ENVIRONMENT, PATH_JAVASCRIPT, PATH_LIGHTMAPS ]
         for p in ALL_PATHS:
@@ -538,7 +540,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
         _resources = [
             [ ".", "favicon.ico", True ],
             [ ".", "style.css" , True],
-            [ ".", "start_server.bat" , True],
+            [ ".", "start_web_server.py" , False],
             [ PATH_RESOURCES, "sky.jpg", False ],
             [ PATH_RESOURCES, "play.png", False ],
             [ PATH_RESOURCES, "pause.png", False],
@@ -629,7 +631,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                     gltf_model = 'gltf-model="#'+obj.name+'"' 
 
                     # export gltf
-                    print(obj.type)
+                    # print(obj.type)
                     if obj.type == 'MESH' or obj.type == 'EMPTY':
                         if obj.type == 'EMPTY':
                             gltf_model = ''
@@ -715,10 +717,10 @@ class AframeExport_OT_Operator(bpy.types.Operator):
         for obj in bpy.data.objects:
 #            print(obj.name, ' = ', obj.type)
             if obj.type in lamp_types:
-                print(obj.name, obj.data.type, obj.data.color, obj.data.distance, obj.data.cutoff_distance, str(obj.location.x)+" "+str(obj.location.z)+" "+str(-obj.location.y))    
+                #print(obj.name, obj.data.type, obj.data.color, obj.data.distance, obj.data.cutoff_distance, str(obj.location.x)+" "+str(obj.location.z)+" "+str(-obj.location.y))    
                 distance = str(obj.data.distance)
                 hex_color = to_hex(obj.data.color)
-                print("color = "+hex_color)
+                #print("color = "+hex_color)
                 #default light type
                 light_type = "directional"
                 if obj.data.type == "POINT":
@@ -735,8 +737,10 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                 else:                     
                     cast_shadows = "false"
                 blender_lights.append('\n\t\t\t<a-entity position="'+light_position+'" light="castShadow:'+str(cast_shadows)+'; color:'+hex_color+'; distance:'+cutoff_distance+'; type:'+light_type+'; intensity:'+intensity+'; shadowBias: -0.001; shadowCameraFar: 501.02; shadowCameraBottom: 12; shadowCameraFov: 101.79; shadowCameraNear: 0; shadowCameraTop: -5; shadowCameraRight: 10; shadowCameraLeft: -10; shadowRadius: 2;"></a-entity>')
-        print(blender_lights)
+        #print(blender_lights)
         # Loop the Lamps
+
+        print("[AFRAME EXPORTER] Completed Exporting Project.....................................")
 
         bpy.ops.object.select_all(action='DESELECT')
 
@@ -797,7 +801,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
 
         if scene.b_use_default_lights:
             final_lights = '<a-entity light="intensity: '+ light_directional_intensity+'; castShadow: '+showcast_shadows+'; shadowBias: -0.001; shadowCameraFar: 501.02; shadowCameraBottom: 12; shadowCameraFov: 101.79; shadowCameraNear: 0; shadowCameraTop: -5; shadowCameraRight: 10; shadowCameraLeft: -10; shadowRadius: 2" position="1.36586 7.17965 1"></a-entity>\n\t\t\t<a-entity light="type: ambient; intensity: '+light_ambient_intensity+'"></a-entity>'
-            print("final lights="+final_lights)
+            #print("final lights="+final_lights)
         else:
             templights = ""
             for x in blender_lights:
@@ -1009,6 +1013,10 @@ def register():
 
 
 def unregister():
+    if Server.instance:
+        Server.instance.stop()
+        Server.instance = None
+
     bpy.utils.unregister_class(AframeExportPanel_PT_Panel)
     bpy.utils.unregister_class(AframeBake_OT_Operator)
     bpy.utils.unregister_class(AframeClean_OT_Operator)    
@@ -1032,7 +1040,7 @@ def unregister():
     # deletes intex.html template embeded file
     for t in bpy.data.texts:
         if (t.name == 'index.html'):
-            print(t.name)
+            #print(t.name)
             bpy.data.texts.remove(t)        
 
 

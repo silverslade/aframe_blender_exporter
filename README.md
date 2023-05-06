@@ -79,19 +79,18 @@ This Addon manages the following settings (all of them switchable inside the UI)
 
 
 ### How to execute the A-Frame 3D scene standalone
-Launch a local web server to test your WebVR page: there are several possibilities
-+ run the embedded server, click on the `Start Serving` button
-+ run `live-server` under npm (install it with `npm install -g live-server`)
-+ run `python -m SimpleHTTPServer` 
-+ run the `start_server.bat` file inside the output directory
-+ For massive exports, 'live-server' could be more useful because it can manage a content auto-refresh.
+Several possibilities for running a local web server to test or delivery your WebVR page: 
 
++ with Nodejs: run `live-server` under npm (install it with `npm install -g live-server`)
++ with Python: run `python -m SimpleHTTPServer` 
++ with a Python script: run `python start_web_server.py` inside the output directory
++ Note: For massive exports, 'live-server' could be more useful because it can manage a content auto-refresh.
 
 For further instructions, see the official [project page](https://silverslade.itch.io/a-frame-blender-exporter).
 
 ### Main UI configuration
 
-Main Ui for the current version 0.0.9.
+Main Ui for the current version 0.0.10.
 For a better usability, the add-on is divided into 6 main panels: 
 + A-frame
 + Renderer

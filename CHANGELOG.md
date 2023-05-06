@@ -4,7 +4,6 @@
 - click to show/hide a 3D object
 - click to toogle a 3D object
 - add Integrated Bake Process similar to [@anfeo](https://github.com/anfeo) 
-- remove the "start_server.bat" and add a python script to run a local web server
 
 
 ## CHANGELOG
@@ -14,8 +13,12 @@ All notable changes to this project will be documented in this file.
 - NEW = New Feature
 - FIX = Bug Fix
 
-## [0.0.10] - Work in progress
+## [0.0.11] - Work in progress
 
+## [0.0.10] - 2023-05-06
+- [NEW] fix closing Blender with running http server, thanks to [@s-light](https://github.com/s-light)
+- [NEW] removed "start_server.bat"
+- [NEW] added "start_web_server.py" file in the exported directory to start local web server (used for delivery package outside blender)
 
 ## [0.0.9] - 2023-04-29
 
