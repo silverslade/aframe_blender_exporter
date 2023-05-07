@@ -60,7 +60,7 @@ bl_info = {
     "author" : "Alessandro Schillaci",
     "description" : "Blender Exporter to AFrame WebVR application",
     "blender" : (3, 5, 0),
-    "version" : (0, 0, 10),
+    "version" : (0, 0, 11),
     "location" : "View3D",
     "warning" : "",
     "category" : "3D View"
@@ -76,6 +76,8 @@ import urllib.request
 import socketserver
 import threading
 import json
+import random
+import string
 
 PORT = 8001
 
@@ -212,7 +214,7 @@ def default_template():
 
 class AframeExportPanel_PT_Panel(bpy.types.Panel):
     bl_idname = "AFRAME_EXPORT_PT_Panel"
-    bl_label = "Aframe Exporter (v 0.0.10b01)"
+    bl_label = "Aframe Exporter (v 0.0.11)"
     bl_category = "Aframe"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
@@ -338,8 +340,27 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             box.prop(scene, "export_path")
             box.prop(scene, "b_export_single_model")
             box.operator('aframe.clear_asset_dir', text='Clear Assets Directory')
+        
+        # Show properties of selected object
+        
+        row = layout.row(align=True) 
+        row.label(text="Selected Object Properties", icon='NONE')
+        row = layout.row(align=True)   
+        box = row.box()        
 
-        row = layout.row(align=True)       
+        obj = bpy.context.active_object
+        for K in obj.keys():
+            if K.startswith('AFRAME_'):
+                #box.label(text=K)   
+                row = box.column_flow(columns=2, align=False)
+                row.label(text=K)   
+                #row.prop(scene, "s_showhide_object", text="")  
+                row.operator("aframe.delete_property").targetproperty=K                
+                #box.prop(text=obj[K])
+
+        #if bpy.context.active_object["AFRAME_CUBEMAP"] is not None:
+        #    box.label(text="AFRAME_CUBEMAP")                    
+
         row = layout.row(align=True) 
         row.operator('aframe.export', text='Export A-Frame Project')
         row = layout.row(align=True) 
@@ -350,6 +371,7 @@ class AframeExportPanel_PT_Panel(bpy.types.Panel):
             row.operator("wm.url_open", text="Open Preview").url = f'http://localhost:{PORT}'
             row = layout.row(align=True) 
         row.label(text=scene.s_output, icon='INFO')
+        
 
 
 class AframeClean_OT_Operator(bpy.types.Operator):
@@ -635,8 +657,10 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                     if obj.type == 'MESH' or obj.type == 'EMPTY':
                         if obj.type == 'EMPTY':
                             gltf_model = ''
-                        #print(obj.name,"custom properties:")
+                        #print(obj.name,"custom properties:\n********************")                        
                         for K in obj.keys():
+                            #print(K , "-" , obj[K], "\n" )
+                            #print(K , "=" , obj[K])
                             if K not in '_RNA_UI':
                                 #print( "\n", K , "-" , obj[K], "\n" )
                                 if K == "AFRAME_CUBEMAP" and scene.b_cubemap:
@@ -683,6 +707,7 @@ class AframeExport_OT_Operator(bpy.types.Operator):
                                 elif K.startswith('AFRAME_'):
                                     attr   = K.split("AFRAME_")[1].lower()
                                     custom = custom+' '+attr+'="'+str(obj[K])+'"'
+                        #print("********************")
 
                         if video == False and image == False:                        
                             # check if baked texture is present on filesystem
@@ -886,6 +911,22 @@ _props = [
 ]
 
 # CUSTOM PROPERTY OPERATORS
+class DeleteProperty(bpy.types.Operator):
+    bl_idname = 'aframe.delete_property'
+    bl_label = 'Remove'
+    bl_description = 'Remove custom property from selected object'
+
+    targetproperty: bpy.props.StringProperty(name="targetproperty")
+
+    def execute(self, context):
+        try:
+            scene = context.scene
+            print("deleting:" , self.targetproperty)
+            del bpy.context.active_object[self.targetproperty]
+        except Exception as e:
+            bpy.ops.wm.popuperror('INVOKE_DEFAULT', e = str(e))
+        return {'FINISHED'}
+
 class ShowHideObject(bpy.types.Operator):
     bl_idname = 'aframe.show_hide_object'
     bl_label = 'Add Show Hide Object'
@@ -937,7 +978,7 @@ class Rotation360(bpy.types.Operator):
     bl_description = 'Rotation Object 360 on Z axis'
     def execute(self, context):
         try:
-           bpy.context.active_object["AFRAME_ANIMATION"] = "property: rotation; to: 0 360 0; loop: true; dur: 10000"
+            bpy.context.active_object["AFRAME_ANIMATION"] = "property: rotation; to: 0 360 0; loop: true; dur: 10000"
         except Exception as e:
             bpy.ops.wm.popuperror('INVOKE_DEFAULT', e = str(e))
         return {'FINISHED'}
@@ -999,6 +1040,7 @@ def register():
     bpy.utils.register_class(Images)       
     bpy.utils.register_class(ToogleObjects)       
     bpy.utils.register_class(ShowHideObject)                   
+    bpy.utils.register_class(DeleteProperty)                       
     
     for p in _props:
         if p [ 0 ] == 'str': _reg_str ( scn, * p [ 1 : ] )
@@ -1033,6 +1075,7 @@ def unregister():
     bpy.utils.unregister_class(Images)
     bpy.utils.unregister_class(ToogleObjects)    
     bpy.utils.unregister_class(ShowHideObject)      
+    bpy.utils.unregister_class(DeleteProperty)          
 
     #for p in _props:
     #    del bpy.types.Scene [ p [ 1 ] ]

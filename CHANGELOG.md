@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
 - FIX = Bug Fix
 
 ## [0.0.11] - Work in progress
+- [NEW] show all AFRAME custom properties inside the main panel
+- [NEW] add a "remove" button foreach custom properties
 
 ## [0.0.10] - 2023-05-06
 - [NEW] fix closing Blender with running http server, thanks to [@s-light](https://github.com/s-light)
